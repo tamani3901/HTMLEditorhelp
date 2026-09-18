@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ブロック de HTML エディタ - 詳細使い方マニュアル</title>
+<style>
+  :root {
+    --primary: #2ec4a6;
+    --primary-dark: #1d9e83;
+    --preset-color: #ff9800;
+    --design-color: #7e57c2;
+    --api-color: #e91e63;
+    --bg-main: #eef1f5;
+    --bg-card: #ffffff;
+    --text-color: #232a31;
+    --text-muted: #5b6875;
+    --border-color: #dfe4ea;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", "Yu Gothic", sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg-main);
+    color: var(--text-color);
+    line-height: 1.6;
+  }
+
+  header {
+    background: linear-gradient(135deg, #1d9e83, #2ec4a6);
+    color: white;
+    padding: 40px 20px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+
+  header h1 {
+    margin: 0 0 10px 0;
+    font-size: 2.2rem;
+  }
+
+  header p {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 1.1rem;
+  }
+
+  .container {
+    max-width: 1000px;
+    margin: 30px auto;
+    padding: 0 20px;
+  }
+
+  nav.toc {
+    background: var(--bg-card);
+    padding: 20px 30px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    margin-bottom: 30px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+
+  nav.toc h2 {
+    margin-top: 0;
+    font-size: 1.2rem;
+    border-bottom: 2px solid var(--primary);
+    padding-bottom: 8px;
+  }
+
+  nav.toc ul {
+    column-count: 2;
+    column-gap: 20px;
+    padding-left: 20px;
+    margin-bottom: 0;
+  }
+
+  @media (max-width: 600px) {
+    nav.toc ul { column-count: 1; }
+  }
+
+  nav.toc a {
+    color: var(--primary-dark);
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  nav.toc a:hover {
+    text-decoration: underline;
+  }
+
+  section {
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 30px;
+    margin-bottom: 30px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+
+  h2 {
+    color: var(--text-color);
+    font-size: 1.5rem;
+    border-left: 5px solid var(--primary);
+    padding-left: 12px;
+    margin-top: 0;
+  }
+
+  h3 {
+    font-size: 1.2rem;
+    margin-top: 24px;
+    color: var(--text-color);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 6px;
+  }
+
+  p { margin: 10px 0; }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: bold;
+    color: white;
+    margin-right: 4px;
+  }
+
+  .badge-preset { background-color: var(--preset-color); }
+  .badge-design { background-color: var(--design-color); }
+  .badge-api { background-color: var(--api-color); }
+  .badge-main { background-color: var(--primary); }
+
+  .ui-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-top: 15px;
+  }
+
+  .ui-card {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px;
+    background: #f8fafc;
+  }
+
+  .ui-card h4 {
+    margin: 0 0 8px 0;
+    color: var(--primary-dark);
+  }
+
+  .step-list {
+    padding-left: 20px;
+  }
+
+  .step-list li {
+    margin-bottom: 15px;
+  }
+
+  .callout {
+    padding: 15px;
+    border-radius: 8px;
+    margin: 15px 0;
+    font-size: 0.95rem;
+  }
+
+  .callout-info {
+    background-color: #e8f4fd;
+    border-left: 4px solid #4a9eff;
+    color: #0d3e6b;
+  }
+
+  .callout-warn {
+    background-color: #fff8e1;
+    border-left: 4px solid #f0ad4e;
+    color: #6b5400;
+  }
+
+  .callout-tip {
+    background-color: #e8f8ef;
+    border-left: 4px solid #2ec4a6;
+    color: #0d5232;
+  }
+
+  code {
+    background-color: #f1f5f8;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: 0.9em;
+  }
+
+  kbd {
+    background-color: #232a31;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.85em;
+  }
+
+  footer {
+    text-align: center;
+    padding: 20px;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>ブロック de HTML エディタ</h1>
+  <p>ノーコードで直感的にWebページやミニアプリを構築できるビジュアルエディタの使い方説明書</p>
+</header>
+
+<div class="container">
+
+  <!-- 目次 -->
+  <nav class="toc">
+    <h2>目次</h2>
+    <ul>
+      <li><a href="#overview">1. 概要と特徴</a></li>
+      <li><a href="#layout">2. 画面構成</a></li>
+      <li><a href="#basic-usage">3. 基本的な使い方（作成手順）</a></li>
+      <li><a href="#preset-usage">4. 「かんたん入力（プリセット）」の使い方</a></li>
+      <li><a href="#event-usage">5. 動的な仕組み（イベント・動作）を作る</a></li>
+      <li><a href="#actions">6. 保存・読み込み・出力（アクション機能）</a></li>
+      <li><a href="#tips">7. 実践活用テクニック・FAQ</a></li>
+    </ul>
+  </nav>
+
+  <!-- 1. 概要 -->
+  <section id="overview">
+    <h2>1. 概要と特徴</h2>
+    <p><strong>「ブロック de HTML エディタ」</strong>は、プログラミングコードを書くことなく、ブロックをドラッグ＆ドロップして配置・調整するだけで本格的なWebページやインタラクティブなミニアプリを作成できるツールです。</p>
+    
+    <div class="ui-grid">
+      <div class="ui-card">
+        <h4>🧩 直感的なブロック構築</h4>
+        <p>HTMLの要素（テキスト、画像、ボタン、フォームなど）をブロック単位で組み合わせられます。</p>
+      </div>
+      <div class="ui-card">
+        <h4>🎁 かんたん入力（プリセット）</h4>
+        <p>色・サイズ・URL・SVG画像などを、入力欄へワンタッチで適用できます。</p>
+      </div>
+      <div class="ui-card">
+        <h4>⚡ ノーコード動作実装</h4>
+        <p>「ボタンを押すと文字が変わる」「カウントダウンをする」などの動きをJavaScript不要で設定可能です。</p>
+      </div>
+      <div class="ui-card">
+        <h4>📱 リアルタイムプレビュー</h4>
+        <p>PC表示・スマホ表示を切り替えながら、作成中の画面を即座にテストできます。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. 画面構成 -->
+  <section id="layout">
+    <h2>2. 画面構成</h2>
+    <p>エディタ画面は大きく分けて4つのエリアで構成されています。</p>
+
+    <div class="ui-grid">
+      <div class="ui-card">
+        <h4>① 上部バー（トップ・タブ）</h4>
+        <p>操作の「戻る」「やり直す」ボタン、およびブロックのカテゴリ（デザイン、メディア、フォーム等）を切り替えるタブが並んでいます。</p>
+      </div>
+      <div class="ui-card">
+        <h4>② 左側：パレット</h4>
+        <p>選択したタブに応じたパーツ（HTML要素、CSSスタイル、プリセットなど）の一覧が表示されます。ここから右側へドラッグして配置します。</p>
+      </div>
+      <div class="ui-card">
+        <h4>③ 中央：ワークスペース</h4>
+        <p>ブロックを配置して組み立てるメイン作業エリアです。要素の親子構造（枠の中にボタンを入れる等）を視覚的に管理できます。</p>
+      </div>
+      <div class="ui-card">
+        <h4>④ 右側：プレビュー＆操作</h4>
+        <p>上部で「画面の完成像（PC/スマホ）」と「生成コード」を切り替え表示。下部のボタンで保存やファイル出力を行います。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. 基本的な使い方 -->
+  <section id="basic-usage">
+    <h2>3. 基本的な使い方（作成手順）</h2>
+    
+    <ol class="step-list">
+      <li>
+        <strong>ブロックをパレットからドラッグ＆ドロップする</strong><br>
+        画面上部のカテゴリタブ（例：<code>📝 テキスト</code>、<code>🔗 リンク</code>、<code>🧾 フォーム</code>など）を選択し、左側のパレットにあるブロックの左端ハンドル（<code>⋮⋮</code>）を掴んで、中央のワークスペース内のドロップ領域（「ここにブロックをドロップ」）へ持っていきます。
+      </li>
+      <li>
+        <strong>プロパティを設定する</strong><br>
+        配置したブロックのテキストボックスやドロップダウンを編集します。
+        <ul>
+          <li><strong>ID:</strong> 他のブロックと連携させるための識別名（例: <code>btn1</code>, <code>out1</code> など）。</li>
+          <li><strong>テキスト / ラベル:</strong> 画面に表示される文字。</li>
+        </ul>
+      </li>
+      <li>
+        <strong>枠（コンテナ）の中にブロックを組み込む</strong><br>
+        <code>📦 装飾ボックス</code>や<code>🃏 カード</code>などの「枠（コンテナ）」ブロックを配置すると、その中にさらに別のブロックを入れることができます。
+      </li>
+      <li>
+        <strong>デザイン（CSS）を付与する</strong><br>
+        <code>🎨 CSS</code> タブから「幅」「背景色」「文字サイズ」「角丸」などのCSSブロックを引き出し、ブロック内の「CSSスロット」にセットすることでスタイルを変更できます。
+      </li>
+      <li>
+        <strong>プレビューで確認する</strong><br>
+        右側パネルで完成イメージをリアルタイム確認します。<code>🖥</code>（デスクトップ）と<code>📱</code>（モバイル）アイコンで表示幅を変更できます。
+      </li>
+    </ol>
+  </section>
+
+  <!-- 4. プリセット機能 -->
+  <section id="preset-usage">
+    <h2>4. 「かんたん入力（プリセット）」の使い方</h2>
+    <p>カラーコードやサイズの値、サンプル画像のURLなどを手入力する手間を省くための強力な補助機能です。</p>
+
+    <div class="callout callout-tip">
+      <strong>✨ プリセットの使い方手順</strong>
+      <ol style="margin-bottom:0; padding-left:20px;">
+        <li>上部タブの<span class="badge badge-preset">🎁 かんたん</span>をクリックします。</li>
+        <li>パレットに「色」「長さ・サイズ」「URLサンプル」「SVG図形」などが表示されます。</li>
+        <li>使いたいプリセットブロック（オレンジ色の項目）をドラッグすると、ワークスペース内の<strong>入力可能なフィールドが黄色くハイライト</strong>されます。</li>
+        <li>目的の入力欄の上にドロップすると、その値（例：<code>#2ec4a6</code> や <code>https://picsum.photos/400/300</code>）が自動入力されます。</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 5. 動的な仕組みを作る -->
+  <section id="event-usage">
+    <h2>5. 動的な仕組み（イベント・動作）を作る</h2>
+    <p>JavaScriptの知識がなくても、クリックや入力に応じて表示が変わる「動きのあるWebページ」が作れます。</p>
+
+    <h3>基本原理：IDによる連携</h3>
+    <p>動きを作るには、<strong>「操作する側（ボタンや入力欄）」</strong>と<strong>「変化する側（テキストや出力欄）」</strong>のIDを繋ぎ合わせます。</p>
+
+    <div class="callout callout-info">
+      <strong>💡 例：ボタンを押したら文字を表示する仕組み</strong>
+      <ol style="margin-bottom:0; padding-left:20px;">
+        <li><code>📤 出力欄</code> ブロックを配置し、IDに <code>out1</code> と入力。</li>
+        <li><code>🔘 ボタン</code> ブロックを配置し、IDに <code>btn1</code> と入力。</li>
+        <li>上部タブから<code>🔢 動作</code>を選び、<code>💬 クリックでテキスト表示</code> ブロックをボタンの「動作スロット」にドロップ。</li>
+        <li>設定欄の「表示先ID」に <code>out1</code>、「表示する文字」に <code>こんにちは！</code> と入力。</li>
+        <li>右側のプレビューでボタンを押すと、出力欄に文字が表示されます！</li>
+      </ol>
+    </div>
+
+    <h3>主な動作ブロックカテゴリ</h3>
+    <ul>
+      <li><strong>値の操作・計算：</strong> 入力された2つの数値を足し算・引き算する、変数に保存する、カウンター（＋/ー）。</li>
+      <li><strong>表示の切り替え：</strong> 要素を表示/非表示にする、おみくじのように「ランダムに1つ表示」する。</li>
+      <li><strong>メディア・キャンバス：</strong> 動画の再生/一時停止、お絵かきキャンバスの消去・ペン色変更。</li>
+      <li><strong>タイマー・API：</strong> カウントダウンタイマー、ストップウォッチ、時間が経つと自動で進む進行バー。</li>
+    </ul>
+  </section>
+
+  <!-- 6. 保存・出力（アクション） -->
+  <section id="actions">
+    <h2>6. 保存・読み込み・出力（アクション機能）</h2>
+    <p>画面右下の「アクションエリア」にあるボタン群で、プロジェクトの管理を行えます。</p>
+
+    <div class="ui-grid">
+      <div class="ui-card">
+        <h4>📄 HTMLエクスポート</h4>
+        <p>作成したデザインと動作が全て含まれた、そのままWebサーバーで動く単体の <code>.html</code> ファイルをダウンロードします。</p>
+      </div>
+      <div class="ui-card">
+        <h4>💾 セーブ / 📂 読み込み</h4>
+        <p>現在編集中のデータをブラウザのローカルストレージに保存・復元します。作業の途中で中断したい場合に便利です。</p>
+      </div>
+      <div class="ui-card">
+        <h4>⬇ JSON書き出し / 📥 インポート</h4>
+        <p>プロジェクト構造をJSON形式で保存・読み込みできます。別のパソコンへデータを移動する際に使用します。</p>
+
+      </div>
+      <div class="ui-card">
+        <h4>♻ リセット系機能</h4>
+        <p><code>🗑 セーブリセット</code> で保存データを削除、<code>♻ プロジェクトリセット</code> でキャンバスを初期化（白紙化）します。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. FAQ・テクニック -->
+  <section id="tips">
+    <h2>7. 実践活用テクニック・FAQ</h2>
+
+    <h3>Q. 誤って削除してしまったり、ドラッグを失敗した場合は？</h3>
+    <p>画面最上部の <kbd>↶ 戻る</kbd> ボタンを押すと、一つ前の状態に復元できます（<kbd>↷ やり直す</kbd> で進めることも可能です）。</p>
+
+    <h3>Q. プレビューを全画面でしっかり確認したい</h3>
+    <p>プレビューエリア右上にある <code>⛶</code> (全画面表示) ボタンをクリックすると、ブラウザいっぱいに完成画面を表示して動作テストが行えます。</p>
+
+    <h3>Q. スマホ対応（レスポンシブデザイン）にするには？</h3>
+    <p><code>🎨 デザイン</code> タブにある <code>↔ 横並び</code> や <code>⊞ 2列グリッド</code> を使用すると、画面幅に合わせて自動的に綺麗に折り返されるレイアウトが作れます。</p>
+  </section>
+
+</div>
+
+<footer>
+  <p>© Block de HTML Editor - Manual Document</p>
+</footer>
+
+</body>
+</html>
