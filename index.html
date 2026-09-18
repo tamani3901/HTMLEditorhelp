@@ -2,877 +2,784 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>ブロック de HTML エディタ</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ブロック de HTML エディタ - 詳細使い方マニュアル</title>
 <style>
-  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-  html,body{margin:0;padding:0;height:100%;}
-  body{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP","Yu Gothic",sans-serif;background:#eef1f5;color:#232a31;font-size:14px;user-select:none;-webkit-user-select:none;overflow:hidden;}
-  input,select,textarea{user-select:text;-webkit-user-select:text;font-family:inherit;}
-  #app{height:100dvh;display:flex;flex-direction:column;overflow:hidden;}
-  #topbar{flex:0 0 auto;display:flex;gap:8px;padding:6px 10px;background:#f4f6f9;border-bottom:1px solid #dfe4ea;align-items:center;flex-wrap:wrap;}
-  .hist-btn{display:flex;align-items:center;gap:6px;padding:6px 14px;border:1px solid #dfe4ea;background:#fff;border-radius:8px;font-size:12.5px;color:#3b4652;cursor:pointer;transition:.12s;font-family:inherit;}
-  .hist-btn:hover:not(:disabled){background:#eef7f5;border-color:#8fd8c8;color:#1d9e83;}
-  .hist-btn:disabled{opacity:.4;cursor:not-allowed;}
-  .hist-btn .hi{font-size:15px;line-height:1;font-weight:700;}
-  .help-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:1px solid #c3dbf5;background:#e8f4fd;border-radius:8px;font-size:12.5px;color:#0d3e6b;cursor:pointer;text-decoration:none;font-family:inherit;transition:.12s;font-weight:600;}
-  .help-btn:hover{background:#d4ebfc;border-color:#4a9eff;color:#06305a;}
-  .help-btn:active{transform:scale(0.97);}
-  .hist-info{margin-left:auto;font-size:11px;color:#8b97a3;}
-  #tabbar{flex:0 0 auto;display:flex;flex-wrap:wrap;gap:5px;padding:8px 10px;background:#fff;border-bottom:1px solid #dfe4ea;align-items:flex-start;align-content:flex-start;}
-  .tab{flex:0 0 auto;padding:6px 11px;border-radius:999px;border:1px solid #dfe4ea;background:#f8fafc;font-size:11.5px;color:#3b4652;cursor:pointer;white-space:nowrap;transition:.15s;line-height:1.3;}
-  .tab:hover{background:#eef7f5;border-color:#8fd8c8;}
-  .tab.active{background:#2ec4a6;border-color:#2ec4a6;color:#fff;font-weight:700;}
-  .tab.preset-tab.active{background:#ff9800;border-color:#ff9800;}
-  .tab.design-tab.active{background:#7e57c2;border-color:#7e57c2;}
-  .tab.api-tab.active{background:#e91e63;border-color:#e91e63;}
-  #main{flex:1 1 auto;display:grid;grid-template-columns:260px minmax(0,1fr) 340px;min-height:0;overflow:hidden;}
-  #palette{background:#fff;border-right:1px solid #dfe4ea;display:flex;flex-direction:column;min-height:0;overflow:hidden;}
-  #palette-head{flex:0 0 auto;padding:10px 12px;font-size:11.5px;font-weight:700;color:#5b6875;letter-spacing:.04em;border-bottom:1px solid #eef1f5;background:#fbfcfe;}
-  
-  /* 追加：ブロック説明エリア */
-  #block-desc-box{flex:0 0 auto;padding:10px;background:#f0f7ff;border-bottom:1px solid #cce3f5;font-size:11.5px;line-height:1.5;color:#1e3a5f;}
-  #block-desc-box label{font-weight:700;display:block;margin-bottom:4px;color:#0d3e6b;}
-  #block-desc-select{width:100%;padding:4px 6px;border-radius:6px;border:1px solid #b3daff;background:#fff;margin-bottom:6px;font-size:11.5px;}
-  #block-desc-text{background:#fff;border:1px solid #d0e3f7;border-radius:6px;padding:6px 8px;min-height:48px;max-height:90px;overflow-y:auto;word-break:break-all;color:#2c3e50;}
+  :root {
+    --primary: #2ec4a6;
+    --primary-dark: #1d9e83;
+    --preset-color: #ff9800;
+    --design-color: #7e57c2;
+    --api-color: #e91e63;
+    --bg-main: #eef1f5;
+    --bg-card: #ffffff;
+    --text-color: #232a31;
+    --text-muted: #5b6875;
+    --border-color: #dfe4ea;
+  }
 
-  #palette-list{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;display:flex;flex-direction:column;gap:6px;overscroll-behavior:contain;}
-  .pal-item{display:flex;align-items:stretch;gap:6px;padding:0;border:1px solid #dfe4ea;border-radius:10px;background:#fbfdff;font-size:12.5px;transition:.12s;flex:0 0 auto;touch-action:pan-y;overflow:hidden;min-height:42px;cursor:pointer;}
-  .pal-item:hover{border-color:#8fd8c8;background:#f2fbf9;}
-  .pal-item.preset-item{background:#fffbf2;border-color:#ffe0b2;}
-  .pal-item.design-item{background:#f8f5ff;border-color:#e1d5f7;}
-  .pal-item.api-item{background:#fff0f5;border-color:#f8bbd0;}
-  .pal-item.selected-item{border-color:#2ec4a6;box-shadow:0 0 0 2px rgba(46,196,166,.3);background:#eafaf6;}
-  .drag-handle{flex:0 0 auto;width:38px;display:flex;align-items:center;justify-content:center;background:#f1f5f8;color:#96a3b0;font-size:18px;cursor:grab;touch-action:none;user-select:none;line-height:1;font-weight:700;letter-spacing:-2px;padding-left:6px;}
-  .drag-handle:active{cursor:grabbing;background:#c8e8e0;color:#0d8c72;}
-  .pi-icon{font-size:15px;width:22px;text-align:center;flex:0 0 auto;align-self:center;}
-  .pi-body{flex:1 1 auto;min-width:0;display:flex;align-items:center;padding:8px 8px 8px 0;}
-  .pi-label{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.3;}
-  .preset-help,.design-help,.event-help,.api-help{font-size:11px;border-radius:8px;padding:8px 10px;line-height:1.6;margin-bottom:4px;}
-  .preset-help{color:#8b6914;background:#fff8e1;border:1px solid #ffe0b2;}
-  .design-help{color:#4a2f8b;background:#f0e9ff;border:1px solid #e1d5f7;}
-  .event-help{color:#0d3e6b;background:#e8f4fd;border:1px solid #b3daff;}
-  .api-help{color:#880e4f;background:#fff0f5;border:1px solid #f8bbd0;}
-  .preset-group-head{font-size:11px;font-weight:700;color:#e65100;background:#fff3e0;padding:5px 8px;border-radius:6px;margin-top:6px;}
-  .api-group-head{font-size:11px;font-weight:700;color:#880e4f;background:#fce4ec;padding:5px 8px;border-radius:6px;margin-top:6px;}
-  .data-del{flex:0 0 auto;border:none;background:#f0f3f6;color:#8b97a3;border-radius:6px;width:26px;height:26px;cursor:pointer;align-self:center;margin-right:6px;}
-  .data-del:hover{background:#ffe9e6;color:#d0442c;}
-  .data-item.missing{opacity:.55;}
-  .data-add{display:flex;gap:6px;margin-bottom:4px;}
-  .data-add .act{flex:1 1 auto;font-size:11.5px;padding:7px 4px;}
-  .data-empty{font-size:11.5px;color:#a8b3bd;padding:10px 4px;line-height:1.6;}
-  .badge-miss{font-size:10px;color:#d0442c;background:#ffeae6;border-radius:4px;padding:1px 4px;margin-left:4px;align-self:center;}
-  #workspace{min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;background:#eef1f5;display:flex;flex-direction:column;position:relative;}
-  #workspace.autoscroll-up::before,#workspace.autoscroll-down::after{content:'';position:sticky;left:0;right:0;height:40px;pointer-events:none;z-index:10;}
-  #workspace.autoscroll-up::before{top:0;background:linear-gradient(to bottom,rgba(46,196,166,.35),transparent);}
-  #workspace.autoscroll-down::after{bottom:0;background:linear-gradient(to top,rgba(46,196,166,.35),transparent);margin-top:-40px;}
-  #root-slot{flex:1 1 auto;min-height:100%;padding:14px;background:#fff;border-radius:12px;border:2px solid #e3e9ef;}
-  .ws-block{background:#f8fbfd;border:1px solid #dbe2ea;border-left:3px solid #2ec4a6;border-radius:10px;padding:8px;box-shadow:0 1px 2px rgba(20,30,40,.04);transition:box-shadow .12s, outline .12s;}
-  .ws-block[data-cat="design"]{border-left-color:#7e57c2;background:#faf8ff;}
-  .ws-block[data-cat="api"]{border-left-color:#e91e63;background:#fff8fa;}
-  .ws-block.drag-over{outline:2px solid #2ec4a6;outline-offset:1px;}
-  .ws-block.mini{display:flex;align-items:center;gap:6px;padding:5px 7px;border-left-color:#9aa7b3;background:#f4f7fa;border-radius:8px;}
-  .move-handle{flex:0 0 auto;width:22px;text-align:center;color:#a3b0bc;font-size:14px;cursor:grab;touch-action:none;user-select:none;line-height:1;padding:4px 0;border-radius:5px;font-weight:700;letter-spacing:-2px;padding-left:6px;}
-  .move-handle:active{cursor:grabbing;background:#c8e8e0;color:#1d9e83;}
-  .mini-head{display:flex;align-items:center;gap:4px;flex:0 0 auto;font-size:11.5px;color:#4a5663;}
-  .mini-name{font-weight:600;}
-  .mini-fields{flex:1 1 auto;display:flex;gap:5px;align-items:center;min-width:0;flex-wrap:wrap;}
-  .mini-fields .fld-row{flex:1 1 auto;min-width:0;}
-  .mini-fields .fld-label{display:none;}
-  .mini-fields .fld-hint,.mini-fields .fld-hint-id{display:none;}
-  .mini-del{flex:0 0 auto;border:none;background:transparent;color:#b6c0c9;font-size:13px;cursor:pointer;padding:2px 5px;border-radius:5px;}
-  .mini-del:hover{background:#ffe9e6;color:#d0442c;}
-  .blk-head{display:flex;align-items:center;gap:5px;margin-bottom:6px;}
-  .blk-name{font-size:12.5px;font-weight:700;color:#33404d;}
-  .blk-tag{font-size:10.5px;color:#7e8b98;background:#eaeff4;border-radius:4px;padding:1px 5px;font-family:ui-monospace,Menlo,monospace;}
-  .blk-hint{font-size:11px;color:#4a5663;background:#eaf4ff;border-left:3px solid #4a9eff;border-radius:6px;padding:5px 8px;margin-bottom:6px;line-height:1.5;}
-  .sp{flex:1 1 auto;}
-  .blk-btn{border:none;background:#eef2f6;color:#7a8794;border-radius:6px;width:24px;height:24px;font-size:12px;cursor:pointer;line-height:1;}
-  .blk-btn[data-act="del"]:hover{background:#ffe9e6;color:#d0442c;}
-  .blk-fields{display:flex;flex-direction:column;gap:4px;margin-bottom:6px;}
-  .fld-row{display:flex;align-items:center;gap:4px;padding:1px;border-radius:6px;}
-  .fld-label{flex:0 0 auto;font-size:11px;color:#7e8b98;min-width:64px;}
-  .fld-hint{flex:0 0 auto;font-size:11px;opacity:.35;padding:0 1px;}
-  .fld-hint-id{flex:0 0 auto;font-size:10px;font-family:ui-monospace,Menlo,monospace;color:#8fa0b3;background:#f0f4f8;border-radius:3px;padding:1px 4px;cursor:help;opacity:.7;letter-spacing:-.5px;}
-  .fld-hint-id:hover{background:#e0eaf4;color:#4a6a8b;opacity:1;}
-  .fld{flex:1 1 auto;min-width:0;width:100%;padding:5px 7px;font-size:12px;border:1px solid #dbe2ea;border-radius:6px;background:#fff;color:#232a31;}
-  .fld:focus{outline:none;border-color:#2ec4a6;box-shadow:0 0 0 2px rgba(46,196,166,.15);}
-  .fld.fld-ref{background:#e8f4fd;border-color:#4a9eff;color:#0d3e6b;font-weight:600;}
-  .fld.fld-ref:focus{box-shadow:0 0 0 2px rgba(74,158,255,.25);border-color:#4a9eff;}
-  input[type="color"].fld{padding:1px;height:26px;cursor:pointer;}
-  textarea.fld{resize:vertical;min-height:34px;}
-  body.preset-drag .fld-hint{opacity:1;}
-  .fld-row.preset-target{background:#fff8e1;box-shadow:inset 0 0 0 2px #ffb74d;animation:pulse 1.2s ease-in-out infinite;}
-  @keyframes pulse{0%,100%{background:#fff8e1;}50%{background:#ffe9c4;}}
-  .fld-row.preset-hover{background:#ffe0b2;box-shadow:inset 0 0 0 2px #ff9800;animation:none;}
-  .blk-slots{display:flex;flex-direction:column;gap:4px;}
-  .slot-row{display:flex;gap:5px;align-items:flex-start;}
-  .slot-tag{flex:0 0 auto;font-size:9.5px;font-weight:700;color:#8b97a3;background:#eaeff4;border-radius:4px;padding:3px 5px;margin-top:2px;}
-  .slot-tag.event-tag{background:#fde8c8;color:#a05a00;}
-  .slot{flex:1 1 auto;min-width:0;min-height:30px;padding:5px;border:1.5px dashed #cdd7e0;border-radius:8px;background:#fdfefe;display:flex;flex-direction:column;gap:5px;}
-  .slot:empty::after{content:attr(data-empty);font-size:11px;color:#aab5bf;}
-  .slot.drag-over{border-color:#2ec4a6;background:#eafaf6;}
-  .event-slot{border-color:#f0c67a;background:#fffdf5;}
-  .event-slot:empty::after{color:#c49033;}
-  .event-slot.drag-over{border-color:#ff9800;background:#fff5e0;}
-  #drop-indicator{height:4px;border-radius:2px;background:#2ec4a6;flex:0 0 auto;margin:1px 0;}
-  .drag-clone{position:fixed;z-index:9999;pointer-events:none;display:flex;align-items:center;gap:6px;padding:7px 12px;background:#2ec4a6;color:#fff;font-size:12.5px;font-weight:600;border-radius:99px;box-shadow:0 6px 18px rgba(20,30,40,.28);transform:translate(-50%,-50%);opacity:.94;}
-  .drag-clone.preset-clone{background:#ff9800;}
-  .drag-clone.design-clone{background:#7e57c2;}
-  .drag-clone.move-clone{background:#6366f1;}
-  .drag-clone.api-clone{background:#e91e63;}
-  body.dragging{cursor:grabbing;}
-  body.move-dragging{cursor:grabbing;}
-  #right{background:#fff;border-left:1px solid #dfe4ea;display:flex;flex-direction:column;min-height:0;overflow:hidden;}
-  .panel-head{flex:0 0 auto;display:flex;justify-content:space-between;align-items:center;gap:6px;padding:8px 10px;border-bottom:1px solid #eef1f5;}
-  .seg{display:flex;background:#eef2f6;border-radius:8px;padding:2px;}
-  .seg button{border:none;background:transparent;font-size:11.5px;padding:5px 9px;border-radius:6px;cursor:pointer;color:#5b6875;}
-  .seg button.active{background:#fff;color:#1d9e83;font-weight:700;box-shadow:0 1px 2px rgba(0,0,0,.08);}
-  .fullscreen-btn{border:1px solid #dfe4ea;background:#fff;border-radius:8px;padding:5px 9px;font-size:14px;cursor:pointer;color:#5b6875;line-height:1;margin-left:4px;}
-  #preview-area{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;padding:8px;gap:8px;}
-  #preview-frame-wrap{flex:1 1 auto;min-height:0;display:flex;justify-content:center;background:#e9edf2;border-radius:9px;padding:6px;overflow:auto;}
-  #preview-body{width:100%;height:100%;border:0;background:#fff;border-radius:6px;}
-  #preview-body.mobile{width:375px;flex:0 0 auto;border:1px solid #c9d2dc;box-shadow:0 6px 18px rgba(20,30,40,.14);}
-  #preview-code{flex:1 1 auto;min-height:0;margin:0;overflow:auto;background:#1f2733;color:#c9e8df;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;line-height:1.55;padding:10px;border-radius:9px;white-space:pre;user-select:text;}
-  .hidden{display:none !important;}
-  #action-area{flex:0 0 auto;display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:10px;border-top:1px solid #eef1f5;max-height:42%;overflow-y:auto;}
-  .act{padding:9px 6px;font-size:11.5px;border-radius:8px;border:1px solid #dfe4ea;background:#f8fafc;color:#3b4652;cursor:pointer;transition:.12s;}
-  .act:hover{background:#eef7f5;border-color:#8fd8c8;}
-  .act.primary{background:#2ec4a6;border-color:#2ec4a6;color:#fff;font-weight:700;}
-  .act.danger{color:#c0392b;border-color:#f0d5d1;}
-  #modal-overlay{position:fixed;inset:0;background:rgba(20,30,40,.45);z-index:500;display:flex;align-items:center;justify-content:center;padding:16px;}
-  #modal{background:#fff;border-radius:14px;padding:18px;width:min(480px,100%);max-height:82dvh;overflow:auto;box-shadow:0 20px 50px rgba(0,0,0,.3);}
-  #modal h3{margin:0 0 12px;font-size:15px;}
-  .modal-field{display:block;margin-bottom:12px;}
-  .modal-field span{display:block;font-size:11.5px;color:#7e8b98;margin-bottom:4px;}
-  .modal-field input,.modal-field select{width:100%;padding:9px 10px;border:1px solid #dbe2ea;border-radius:8px;font-size:13px;background:#fff;font-family:inherit;}
-  .slot-list{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;}
-  .slot-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid #e3e9ef;border-radius:9px;background:#fbfcfe;}
-  .slot-info{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px;}
-  .slot-info b{font-size:12px;}
-  .slot-info span{font-size:11px;color:#8b97a3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .slot-item .act{flex:0 0 auto;padding:6px 10px;}
-  .modal-actions{display:flex;justify-content:flex-end;gap:6px;}
-  .modal-msg{font-size:13px;line-height:1.75;color:#3b4652;white-space:pre-wrap;margin:0 0 16px;}
-  #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(10px);background:#232a31;color:#fff;padding:10px 16px;border-radius:10px;font-size:12.5px;opacity:0;pointer-events:none;transition:.22s;z-index:900;max-width:82vw;text-align:center;}
-  #toast.show{opacity:.95;transform:translateX(-50%) translateY(0);}
-  /* ID参照サジェスト */
-  #ref-suggest{position:fixed;z-index:600;background:#fff;border:1px solid #b3daff;border-radius:10px;box-shadow:0 8px 24px rgba(20,30,40,.22);padding:9px 11px;font-size:12px;min-width:220px;max-width:320px;}
-  #ref-suggest .rs-label{font-size:11.5px;color:#0d3e6b;margin-bottom:7px;line-height:1.5;}
-  #ref-suggest .rs-label code{background:#e8f4fd;padding:1px 5px;border-radius:3px;font-family:ui-monospace,Menlo,monospace;color:#06305a;font-weight:700;word-break:break-all;}
-  #ref-suggest .rs-actions{display:flex;gap:5px;}
-  #ref-suggest .rs-btn{flex:1;padding:7px 8px;font-size:11.5px;border-radius:7px;border:1px solid #dfe4ea;background:#f8fafc;cursor:pointer;font-family:inherit;color:#3b4652;transition:.12s;line-height:1.3;}
-  #ref-suggest .rs-btn:hover{background:#eef7f5;border-color:#8fd8c8;}
-  #ref-suggest .rs-btn.primary{background:#2ec4a6;color:#fff;border-color:#2ec4a6;font-weight:700;}
-  #ref-suggest .rs-btn.primary:hover{background:#26b096;}
-  #preview-frame-wrap:fullscreen{background:#1f2733;padding:0;border-radius:0;align-items:center;}
-  #preview-frame-wrap:fullscreen #preview-body{width:100%;height:100%;border-radius:0;max-width:none;}
-  @media (max-width:1100px){#main{grid-template-columns:220px minmax(0,1fr) 300px;}.fld-label{min-width:52px;}}
-  @media (max-width:840px){#main{grid-template-columns:180px minmax(0,1fr) 250px;}.tab{padding:5px 9px;font-size:11px;}}
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", "Yu Gothic", sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg-main);
+    color: var(--text-color);
+    line-height: 1.6;
+  }
+
+  header {
+    background: linear-gradient(135deg, #1d9e83, #2ec4a6);
+    color: white;
+    padding: 40px 20px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+
+  header h1 {
+    margin: 0 0 10px 0;
+    font-size: 2.2rem;
+  }
+
+  header p {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 1.1rem;
+  }
+
+  .container {
+    max-width: 1000px;
+    margin: 30px auto;
+    padding: 0 20px;
+  }
+
+  nav.toc {
+    background: var(--bg-card);
+    padding: 20px 30px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    margin-bottom: 30px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+
+  nav.toc h2 {
+    margin-top: 0;
+    font-size: 1.2rem;
+    border-bottom: 2px solid var(--primary);
+    padding-bottom: 8px;
+  }
+
+  nav.toc ul {
+    column-count: 2;
+    column-gap: 20px;
+    padding-left: 20px;
+    margin-bottom: 0;
+  }
+
+  @media (max-width: 600px) {
+    nav.toc ul { column-count: 1; }
+  }
+
+  nav.toc a {
+    color: var(--primary-dark);
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  nav.toc a:hover {
+    text-decoration: underline;
+  }
+
+  section {
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 30px;
+    margin-bottom: 30px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+
+  h2 {
+    color: var(--text-color);
+    font-size: 1.5rem;
+    border-left: 5px solid var(--primary);
+    padding-left: 12px;
+    margin-top: 0;
+  }
+
+  h3 {
+    font-size: 1.2rem;
+    margin-top: 24px;
+    color: var(--text-color);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 6px;
+  }
+
+  p { margin: 10px 0; }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: bold;
+    color: white;
+    margin-right: 4px;
+  }
+
+  .badge-preset { background-color: var(--preset-color); }
+  .badge-design { background-color: var(--design-color); }
+  .badge-api { background-color: var(--api-color); }
+  .badge-main { background-color: var(--primary); }
+
+  .ui-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-top: 15px;
+  }
+
+  .ui-card {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px;
+    background: #f8fafc;
+  }
+
+  .ui-card h4 {
+    margin: 0 0 8px 0;
+    color: var(--primary-dark);
+  }
+
+  .step-list {
+    padding-left: 20px;
+  }
+
+  .step-list li {
+    margin-bottom: 15px;
+  }
+
+  .callout {
+    padding: 15px;
+    border-radius: 8px;
+    margin: 15px 0;
+    font-size: 0.95rem;
+  }
+
+  .callout-info {
+    background-color: #e8f4fd;
+    border-left: 4px solid #4a9eff;
+    color: #0d3e6b;
+  }
+
+  .callout-warn {
+    background-color: #fff8e1;
+    border-left: 4px solid #f0ad4e;
+    color: #6b5400;
+  }
+
+  .callout-tip {
+    background-color: #e8f8ef;
+    border-left: 4px solid #2ec4a6;
+    color: #0d5232;
+  }
+
+  code {
+    background-color: #f1f5f8;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: 0.9em;
+  }
+
+  kbd {
+    background-color: #232a31;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.85em;
+  }
+
+  /* --- 新機能：ブロック図鑑インタラクティブCSS --- */
+  .catalog-container {
+    display: flex;
+    gap: 20px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+
+  .category-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+  }
+
+  .cat-tab {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border-color);
+    background: #f1f5f8;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: var(--text-muted);
+    transition: all 0.2s;
+  }
+
+  .cat-tab:hover, .cat-tab.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+  }
+
+  .block-list {
+    flex: 1 1 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 480px;
+    overflow-y: auto;
+    padding-right: 5px;
+  }
+
+  .block-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: #ffffff;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+  }
+
+  .block-item:hover {
+    border-color: var(--primary);
+    transform: translateX(3px);
+  }
+
+  .block-item.active {
+    border-color: var(--primary);
+    background: #e8f8ef;
+    font-weight: bold;
+  }
+
+  .block-icon {
+    font-size: 1.2rem;
+    margin-right: 10px;
+  }
+
+  .block-tag {
+    margin-left: auto;
+    font-size: 0.75rem;
+  }
+
+  .block-detail-panel {
+    flex: 1 1 400px;
+    background: #f8fafc;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .detail-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+  }
+
+  .detail-header h4 {
+    margin: 0;
+    font-size: 1.3rem;
+    color: var(--text-color);
+  }
+
+  .detail-section-title {
+    font-weight: bold;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-top: 12px;
+    margin-bottom: 6px;
+  }
+
+  .param-list {
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+  }
+
+  .param-list li {
+    font-size: 0.9rem;
+    margin-bottom: 6px;
+    padding-left: 12px;
+    position: relative;
+  }
+
+  .param-list li::before {
+    content: "•";
+    color: var(--primary);
+    font-weight: bold;
+    position: absolute;
+    left: 0;
+  }
+
+  footer {
+    text-align: center;
+    padding: 20px;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
 </style>
 </head>
 <body>
-<div id="app">
-  <header id="topbar">
-    <button class="hist-btn" id="btn-undo" disabled><span class="hi">↶</span><span>戻る</span></button>
-    <button class="hist-btn" id="btn-redo" disabled><span class="hi">↷</span><span>やり直す</span></button>
-    <a class="help-btn" id="btn-help" href="https://tamani3901.github.io/HTMLEditorhelp/" target="_blank" rel="noopener">📖 使い方</a>
-    <span class="hist-info" id="hist-info"></span>
-  </header>
-  <header id="tabbar"></header>
-  <div id="main">
-    <aside id="palette">
-      <div id="palette-head">かんたん入力</div>
-      
-      <!-- ブロック説明用ドロップダウンエリア -->
-      <div id="block-desc-box">
-        <label for="block-desc-select">💡 ブロックの説明を見る:</label>
-        <select id="block-desc-select">
-          <option value="">-- ブロックを選択してください --</option>
-        </select>
-        <div id="block-desc-text">ブロックを選択すると、ここに機能や使用方法の説明が表示されます。</div>
+
+<header>
+  <h1>ブロック de HTML エディタ</h1>
+  <p>ノーコードで直感的にWebページやミニアプリを構築できるビジュアルエディタの使い方説明書</p>
+</header>
+
+<div class="container">
+
+  <!-- 目次 -->
+  <nav class="toc">
+    <h2>目次</h2>
+    <ul>
+      <li><a href="#overview">1. 概要と特徴</a></li>
+      <li><a href="#layout">2. 画面構成</a></li>
+      <li><a href="#basic-usage">3. 基本的な使い方（作成手順）</a></li>
+      <li><a href="#block-catalog">4. ブロック機能図鑑（インタラクティブ説明）</a></li>
+      <li><a href="#preset-usage">5. 「かんたん入力（プリセット）」の使い方</a></li>
+      <li><a href="#event-usage">6. 動的な仕組み（イベント・動作）を作る</a></li>
+      <li><a href="#actions">7. 保存・読み込み・出力（アクション機能）</a></li>
+      <li><a href="#tips">8. 実践活用テクニック・FAQ</a></li>
+    </ul>
+  </nav>
+
+  <!-- 1. 概要 -->
+  <section id="overview">
+    <h2>1. 概要と特徴</h2>
+    <p><strong>「ブロック de HTML エディタ」</strong>は、プログラミングコードを書くことなく、ブロックをドラッグ＆ドロップして配置・調整するだけで本格的なWebページやインタラクティブなミニアプリを作成できるツールです。</p>
+    
+    <div class="ui-grid">
+      <div class="ui-card">
+        <h4>🧩 直感的なブロック構築</h4>
+        <p>HTMLの要素（テキスト、画像、ボタン、フォームなど）をブロック単位で組み合わせられます。</p>
+      </div>
+      <div class="ui-card">
+        <h4>🎁 かんたん入力（プリセット）</h4>
+        <p>色・サイズ・URL・SVG画像などを、入力欄へワンタッチで適用できます。</p>
+      </div>
+      <div class="ui-card">
+        <h4>⚡ ノーコード動作実装</h4>
+        <p>「ボタンを押すと文字が変わる」「カウントダウンをする」などの動きをJavaScript不要で設定可能です。</p>
+      </div>
+      <div class="ui-card">
+        <h4>📱 リアルタイム確認</h4>
+        <p>PC表示・スマホ表示を切り替えながら、作成中の画面動作を即座にテストできます。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. 画面構成 -->
+  <section id="layout">
+    <h2>2. 画面構成</h2>
+    <p>エディタ画面は大きく分けて4つのエリアで構成されています。</p>
+
+    <div class="ui-grid">
+      <div class="ui-card">
+        <h4>① 上部バー（トップ・タブ）</h4>
+        <p>操作の「戻る」「やり直す」ボタン、およびブロックのカテゴリ（デザイン、メディア、フォーム等）を切り替えるタブが並んでいます。</p>
+      </div>
+      <div class="ui-card">
+        <h4>② 左側：パレット</h4>
+        <p>選択したタブに応じたパーツ（HTML要素、CSSスタイル、プリセットなど）の一覧が表示されます。ここから右側へドラッグして配置します。</p>
+      </div>
+      <div class="ui-card">
+        <h4>③ 中央：ワークスペース</h4>
+        <p>ブロックを配置して組み立てるメイン作業エリアです。要素の親子構造（枠の中にボタンを入れる等）を視覚的に管理できます。</p>
+      </div>
+      <div class="ui-card">
+        <h4>④ 右側：プレビュー＆操作</h4>
+        <p>上部で「画面の完成像（PC/スマホ）」と「生成コード」を切り替え表示。下部のボタンで保存やファイル出力を行います。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. 基本的な使い方 -->
+  <section id="basic-usage">
+    <h2>3. 基本的な使い方（作成手順）</h2>
+    
+    <ol class="step-list">
+      <li>
+        <strong>ブロックをパレットからドラッグ＆ドロップする</strong><br>
+        画面上部のカテゴリタブ（例：<code>📝 テキスト</code>、<code>🔗 リンク</code>、<code>🧾 フォーム</code>など）を選択し、左側のパレットにあるブロックの左端ハンドル（<code>⋮⋮</code>）を掴んで、中央のワークスペース内のドロップ領域（「ここにブロックをドロップ」）へ持っていきます。
+      </li>
+      <li>
+        <strong>プロパティを設定する</strong><br>
+        配置したブロックのテキストボックスやドロップダウンを編集します。
+        <ul>
+          <li><strong>ID:</strong> 他のブロックと連携させるための識別名（例: <code>btn1</code>, <code>out1</code> など）。</li>
+          <li><strong>テキスト / ラベル:</strong> 画面に表示される文字。</li>
+        </ul>
+      </li>
+      <li>
+        <strong>枠（コンテナ）の中にブロックを組み込む</strong><br>
+        <code>📦 装飾ボックス</code>や<code>🃏 カード</code>などの「枠（コンテナ）」ブロックを配置すると、その中にさらに別のブロックを入れることができます。
+      </li>
+      <li>
+        <strong>デザイン（CSS）を付与する</strong><br>
+        <code>🎨 CSS</code> タブから「幅」「背景色」「文字サイズ」「角丸」などのCSSブロックを引き出し、ブロック内の「CSSスロット」にセットすることでスタイルを変更できます。
+      </li>
+      <li>
+        <strong>プレビューで確認する</strong><br>
+        右側パネルで完成イメージをリアルタイム確認します。<code>🖥</code>（デスクトップ）と<code>📱</code>（モバイル）アイコンで表示幅を変更できます。
+      </li>
+    </ol>
+  </section>
+
+  <!-- 4. 新要素：ブロック機能図鑑 (クリックで説明が切り替わる機能) -->
+  <section id="block-catalog">
+    <h2>4. ブロック機能図鑑（インタラクティブ詳細説明）</h2>
+    <p>以下のカテゴリとブロックを選択すると、各ブロックの用途や設定可能なプロパティ（パラメーター）の詳細が表示されます。</p>
+
+    <!-- カテゴリタブ -->
+    <div class="category-tabs" id="catTabs">
+      <div class="cat-tab active" data-cat="text">📝 テキスト・基本</div>
+      <div class="cat-tab" data-cat="layout">📦 レイアウト</div>
+      <div class="cat-tab" data-cat="form">🧾 フォーム・入力</div>
+      <div class="cat-tab" data-cat="action">🔢 動作・JavaScript</div>
+      <div class="cat-tab" data-cat="preset">🎁 プリセット</div>
+    </div>
+
+    <div class="catalog-container">
+      <!-- ブロック一覧リスト -->
+      <div class="block-list" id="blockList">
+        <!-- JSで動的描画 -->
       </div>
 
-      <div id="palette-list"></div>
-    </aside>
-    <section id="workspace"><div id="root-slot" class="slot" data-slot="container" data-empty="ここにブロックをドロップ"></div></section>
-    <aside id="right">
-      <div class="panel-head">
-        <div class="seg" id="view-seg"><button data-view="preview" class="active">プレビュー</button><button data-view="code">コード</button></div>
-        <div style="display:flex;align-items:center;gap:4px;">
-          <div class="seg" id="vp-seg"><button data-vp="desktop" class="active">🖥</button><button data-vp="mobile">📱</button></div>
-          <button class="fullscreen-btn" id="btn-fullscreen">⛶</button>
-        </div>
+      <!-- ブロック詳細表示パネル -->
+      <div class="block-detail-panel" id="blockDetail">
+        <!-- JSで動的描画 -->
       </div>
-      <div id="preview-area"><div id="preview-frame-wrap"><iframe id="preview-body"></iframe></div><pre id="preview-code" class="hidden"></pre></div>
-      <div id="action-area">
-        <button class="act primary" id="btn-export">📄 HTMLエクスポート</button>
-        <button class="act" id="btn-import">📥 ファイルインポート</button>
-        <button class="act" id="btn-save">💾 セーブ</button>
-        <button class="act" id="btn-load">📂 セーブ読み込み</button>
-        <button class="act" id="btn-json">⬇ JSON書き出し</button>
-        <button class="act" id="btn-settings">⚙ 設定</button>
-        <button class="act danger" id="btn-save-reset">🗑 セーブリセット</button>
-        <button class="act danger" id="btn-reset">♻ プロジェクトリセット</button>
+    </div>
+  </section>
+
+  <!-- 5. プリセット機能 -->
+  <section id="preset-usage">
+    <h2>5. 「かんたん入力（プリセット）」の使い方</h2>
+    <p>カラーコードやサイズの値、サンプル画像のURLなどを手入力する手間を省くための強力な補助機能です。</p>
+
+    <div class="callout callout-tip">
+      <strong>✨ プリセットの使い方手順</strong>
+      <ol style="margin-bottom:0; padding-left:20px;">
+        <li>上部タブの<span class="badge badge-preset">🎁 かんたん</span>をクリックします。</li>
+        <li>パレットに「色」「長さ・サイズ」「URLサンプル」「SVG図形」などが表示されます。</li>
+        <li>使いたいプリセットブロック（オレンジ色の項目）をドラッグすると、ワークスペース内の<strong>入力可能なフィールドが黄色くハイライト</strong>されます。</li>
+        <li>目的の入力欄の上にドロップすると、その値（例：<code>#2ec4a6</code> や <code>https://picsum.photos/400/300</code>）が自動入力されます。</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 6. 動的な仕組みを作る -->
+  <section id="event-usage">
+    <h2>6. 動的な仕組み（イベント・動作）を作る</h2>
+    <p>JavaScriptの知識がなくても、クリックや入力に応じて表示が変わる「動きのあるWebページ」が作れます。</p>
+
+    <h3>基本原理：IDによる連携</h3>
+    <p>動きを作るには、<strong>「操作する側（ボタンや入力欄）」</strong>と<strong>「変化する側（テキストや出力欄）」</strong>のIDを繋ぎ合わせます。</p>
+
+    <div class="callout callout-info">
+      <strong>💡 例：ボタンを押したら文字を表示する仕組み</strong>
+      <ol style="margin-bottom:0; padding-left:20px;">
+        <li><code>📤 出力欄</code> ブロックを配置し、IDに <code>out1</code> と入力。</li>
+        <li><code>🔘 ボタン</code> ブロックを配置し、IDに <code>btn1</code> と入力。</li>
+        <li>上部タブから<code>🔢 動作</code>を選び、<code>💬 クリックでテキスト表示</code> ブロックをボタンの「動作スロット」にドロップ。</li>
+        <li>設定欄の「表示先ID」に <code>out1</code>、「表示する文字」に <code>こんにちは！</code> と入力。</li>
+        <li>右側のプレビューでボタンを押すと、出力欄に文字が表示されます！</li>
+      </ol>
+    </div>
+
+    <h3>主な動作ブロックカテゴリ</h3>
+    <ul>
+      <li><strong>値の操作・計算：</strong> 入力された2つの数値を足し算・引き算する、変数に保存する、カウンター（＋/ー）。</li>
+      <li><strong>表示の切り替え：</strong> 要素を表示/非表示にする、おみくじのように「ランダムに1つ表示」する。</li>
+      <li><strong>メディア・キャンバス：</strong> 動画の再生/一時停止、お絵かきキャンバスの消去・ペン色変更。</li>
+      <li><strong>タイマー・API：</strong> カウントダウンタイマー、ストップウォッチ、時間が経つと自動で進む進行バー。</li>
+    </ul>
+  </section>
+
+  <!-- 7. 保存・出力（アクション） -->
+  <section id="actions">
+    <h2>7. 保存・読み込み・出力（アクション機能）</h2>
+    <p>画面右下の「アクションエリア」にあるボタン群で、プロジェクトの管理を行えます。</p>
+
+    <div class="ui-grid">
+      <div class="ui-card">
+        <h4>📄 HTMLエクスポート</h4>
+        <p>作成したデザインと動作が全て含まれた、そのままWebサーバーで動く単体の <code>.html</code> ファイルをダウンロードします。</p>
       </div>
-    </aside>
-  </div>
+      <div class="ui-card">
+        <h4>💾 セーブ / 📂 読み込み</h4>
+        <p>現在編集中のデータをブラウザのローカルストレージに保存・復元します。作業の途中で中断したい場合に便利です。</p>
+      </div>
+      <div class="ui-card">
+        <h4>⬇ JSON書き出し / 📥 インポート</h4>
+        <p>プロジェクト構造をJSON形式で保存・読み込みできます。別のパソコンへデータを移動する際に使用します。</p>
+      </div>
+      <div class="ui-card">
+        <h4>♻ リセット系機能</h4>
+        <p><code>🗑 セーブリセット</code> で保存データを削除、<code>♻ プロジェクトリセット</code> でキャンバスを初期化（白紙化）します。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8. FAQ・テクニック -->
+  <section id="tips">
+    <h2>8. 実践活用テクニック・FAQ</h2>
+
+    <h3>Q. 誤って削除してしまったり、ドラッグを失敗した場合は？</h3>
+    <p>画面最上部の <kbd>↶ 戻る</kbd> ボタンを押すと、一つ前の状態に復元できます（<kbd>↷ やり直す</kbd> で進めることも可能です）。</p>
+
+    <h3>Q. プレビューを全画面でしっかり確認したい</h3>
+    <p>プレビューエリア右上にある <code>⛶</code> (全画面表示) ボタンをクリックすると、ブラウザいっぱいに完成画面を表示して動作テストが行えます。</p>
+
+    <h3>Q. スマホ対応（レスポンシブデザイン）にするには？</h3>
+    <p><code>🎨 デザイン</code> タブにある <code>↔ 横並び</code> や <code>⊞ 2列グリッド</code> を使用すると、画面幅に合わせて自動的に綺麗に折り返されるレイアウトが作れます。</p>
+  </section>
+
 </div>
-<input type="file" id="file-input" accept="*/*" multiple class="hidden">
-<div id="modal-overlay" class="hidden"><div id="modal"></div></div>
-<div id="ref-suggest" class="hidden">
-  <div class="rs-label"></div>
-  <div class="rs-actions">
-    <button class="rs-btn" type="button" data-action="text">文字として使う</button>
-    <button class="rs-btn primary" type="button" data-action="ref">ID参照にする</button>
-  </div>
-</div>
-<div id="toast"></div>
-<div id="drop-indicator" class="hidden"></div>
+
+<footer>
+  <p>© Block de HTML Editor - Manual Document</p>
+</footer>
 
 <script>
-(function(){
-'use strict';
-const $  = (s, r) => (r||document).querySelector(s);
-const $$ = (s, r) => Array.prototype.slice.call((r||document).querySelectorAll(s));
-function escapeHtml(s){return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-let toastTimer = null;
-function toast(msg){const t = $('#toast');t.textContent = msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer = setTimeout(()=>t.classList.remove('show'), 2400);}
-
-const CATEGORIES = [
-  {id:'presets',     label:'🎁 かんたん',        name:'かんたん入力（プリセット）'},
-  {id:'design',      label:'🎨 デザイン',        name:'デザインブロック'},
-  {id:'media',       label:'🖼 メディア',        name:'メディア・画像・SVG'},
-  {id:'text',        label:'📝 テキスト',        name:'テキスト・見出し'},
-  {id:'interactive', label:'🔗 リンク',          name:'リンク・ボタン'},
-  {id:'containers',  label:'📦 枠',              name:'枠・レイアウト'},
-  {id:'lists',       label:'📋 リスト',          name:'リスト・箇条書き'},
-  {id:'tables',      label:'📊 表',              name:'表（テーブル）'},
-  {id:'forms',       label:'🧾 フォーム',        name:'フォーム・入力'},
-  {id:'css',         label:'🎨 CSS',             name:'CSS・フォント・サイズ'},
-  {id:'variables',   label:'🔢 動作',            name:'動作・イベント'},
-  {id:'api',         label:'🚀 API・応用',       name:'API・タイマー・デバイス'},
-  {id:'data',        label:'📁 データ',          name:'インポートデータ'}
-];
-
-const FONT_OPTIONS = [
-  {v:'', l:'（指定なし）'},
-  {v:"system-ui, -apple-system, 'Hiragino Sans', 'Yu Gothic', Meiryo, sans-serif", l:'システム標準'},
-  {v:"sans-serif", l:'ゴシック'},{v:"serif", l:'明朝'},{v:"monospace", l:'等幅'},
-  {v:"'Hiragino Sans', 'Yu Gothic', Meiryo, sans-serif", l:'ヒラギノ/游ゴシック'},
-  {v:"'Hiragino Mincho ProN', 'Yu Mincho', 'MS PMincho', serif", l:'ヒラギノ明朝/游明朝'},
-  {v:"'Hiragino Maru Gothic ProN', 'Yu Gothic', sans-serif", l:'丸ゴシック'},
-  {v:"'Noto Sans JP', 'Yu Gothic', sans-serif", l:'Noto Sans JP'},
-  {v:"'Noto Serif JP', 'Yu Mincho', serif", l:'Noto Serif JP'},
-  {v:"Georgia, 'Times New Roman', serif", l:'Georgia'},
-  {v:"Arial, Helvetica, sans-serif", l:'Arial'},
-  {v:"'Courier New', Courier, monospace", l:'Courier New'}
-];
-
-const TRIGGER_OPTIONS = [
-  {v:'click',  l:'クリック時'},
-  {v:'input',  l:'入力のたび'},
-  {v:'change', l:'変更時'},
-  {v:'submit', l:'送信時'},
-  {v:'load',   l:'ページ読込時'}
-];
-
-const PRESET_GROUPS = {
-  accept:'📁 ファイルの種類', url:'🔗 URLサンプル', color:'🎨 色', size:'📏 長さ・サイズ',
-  fontsize:'🔤 文字サイズ', radius:'⭕ 角の丸み', weight:'💪 文字の太さ', align:'≡ 文字揃え',
-  display:'📺 表示モード', flexdir:'↔ フレックスの方向', justify:'⇔ 横方向の配置',
-  alignitems:'⇕ 縦方向の配置', lineheight:'☰ 行の高さ', letterspacing:'⟷ 文字間隔',
-  textdecoration:'U 文字装飾', opacity:'💧 透明度', border:'▭ 枠線', shadow:'🌑 影',
-  svg:'🎨 SVG図形サンプル', interval:'⏱ タイマー間隔（ミリ秒）', seconds:'⏳ カウント秒数',
-  api:'🌐 API URLサンプル', freq:'🔊 音の周波数 (Hz)', duration:'⏱ 音の長さ（ミリ秒）',
-  vibrate:'📳 振動時間（ミリ秒）'
-};
-
-const PRESETS = {
-  'pre-accept-img':{group:'accept',label:'画像',icon:'🖼',value:'image/*', desc:'ファイル選択等で画像のみを受け付ける設定値です。'},
-  'pre-accept-video':{group:'accept',label:'動画',icon:'🎬',value:'video/*', desc:'ファイル選択等で動画ファイルを受け付ける設定値です。'},
-  'pre-accept-audio':{group:'accept',label:'音声',icon:'🔊',value:'audio/*', desc:'ファイル選択等で音声ファイルを受け付ける設定値です。'},
-  'pre-accept-pdf':{group:'accept',label:'PDF',icon:'📄',value:'application/pdf', desc:'PDFドキュメント用の指定値です。'},
-  'pre-accept-all':{group:'accept',label:'すべて',icon:'📦',value:'*/*', desc:'すべてのファイル形式を受け入れます。'},
-  'pre-url-img1':{group:'url',label:'サンプル画像',icon:'🖼',value:'https://picsum.photos/400/300', desc:'動作確認用のサンプル画像URL（400x300）です。'},
-  'pre-url-img2':{group:'url',label:'プレースホルダー',icon:'🖼',value:'https://placehold.co/400x300', desc:'サイズ表記がついたダミー画像URLです。'},
-  'pre-url-photo':{group:'url',label:'フリー写真',icon:'📷',value:'https://picsum.photos/seed/1/600/400', desc:'高解像度のサンプル写真URLです。'},
-  'pre-url-yt':{group:'url',label:'YouTube動画',icon:'▶️',value:'https://www.youtube.com/embed/dQw4w9WgXcQ', desc:'YouTube埋め込み用の動画URLサンプルです。'},
-  'pre-url-video':{group:'url',label:'サンプル動画',icon:'🎬',value:'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4', desc:'MP4形式のサンプル動画ファイルURLです。'},
-  'pre-url-map':{group:'url',label:'Googleマップ',icon:'🗺',value:'https://maps.google.com/maps?q=Tokyo&output=embed', desc:'Googleマップ埋め込み表示用URLです。'},
-  'pre-url-site':{group:'url',label:'サンプルサイト',icon:'🌐',value:'https://example.com', desc:'テスト用の外部WebサイトURLです。'},
-  'pre-color-black':{group:'color',label:'黒',icon:'⬛',value:'#000000', desc:'カラーコード #000000 (黒) です。'},
-  'pre-color-white':{group:'color',label:'白',icon:'⬜',value:'#ffffff', desc:'カラーコード #ffffff (白) です。'},
-  'pre-color-gray':{group:'color',label:'グレー',icon:'🔘',value:'#888888', desc:'カラーコード #888888 (グレー) です。'},
-  'pre-color-red':{group:'color',label:'赤',icon:'🟥',value:'#e74c3c', desc:'カラーコード #e74c3c (赤) です。'},
-  'pre-color-blue':{group:'color',label:'青',icon:'🟦',value:'#3498db', desc:'カラーコード #3498db (青) です。'},
-  'pre-color-green':{group:'color',label:'緑',icon:'🟩',value:'#2ec4a6', desc:'カラーコード #2ec4a6 (エメラルドグリーン) です。'},
-  'pre-color-yellow':{group:'color',label:'黄',icon:'🟨',value:'#f1c40f', desc:'カラーコード #f1c40f (黄色) です。'},
-  'pre-color-purple':{group:'color',label:'紫',icon:'🟪',value:'#9b59b6', desc:'カラーコード #9b59b6 (紫) です。'},
-  'pre-color-orange':{group:'color',label:'オレンジ',icon:'🟧',value:'#e67e22', desc:'カラーコード #e67e22 (オレンジ) です。'},
-  'pre-color-pink':{group:'color',label:'ピンク',icon:'🌸',value:'#ff69b4', desc:'カラーコード #ff69b4 (ピンク) です。'},
-  'pre-size-0':{group:'size',label:'なし (0)',icon:'⊘',value:'0', desc:'サイズ・余白を0に設定します。'},
-  'pre-size-xs':{group:'size',label:'極小 (4px)',icon:'🤏',value:'4px', desc:'極小サイズの幅や余白（4px）です。'},
-  'pre-size-s':{group:'size',label:'小 (8px)',icon:'🤏',value:'8px', desc:'小サイズの幅や余白（8px）です。'},
-  'pre-size-m':{group:'size',label:'中 (16px)',icon:'✋',value:'16px', desc:'標準的なサイズや余白（16px）です。'},
-  'pre-size-l':{group:'size',label:'大 (32px)',icon:'🖐',value:'32px', desc:'大きめのサイズや余白（32px）です。'},
-  'pre-size-xl':{group:'size',label:'特大 (64px)',icon:'🙌',value:'64px', desc:'特大サイズの幅や余白（64px）です。'},
-  'pre-size-auto':{group:'size',label:'自動 (auto)',icon:'✨',value:'auto', desc:'ブラウザに幅や高さを自動調整させます。'},
-  'pre-size-full':{group:'size',label:'画面いっぱい (100%)',icon:'🖥',value:'100%', desc:'親要素の幅・高さを100%占有させます。'},
-  'pre-size-half':{group:'size',label:'半分 (50%)',icon:'◐',value:'50%', desc:'親要素の50%の大きさに設定します。'},
-  'pre-font-xs':{group:'fontsize',label:'小 (12px)',icon:'ᵃ',value:'12px', desc:'小さめの文字サイズ（12px）です。'},
-  'pre-font-s':{group:'fontsize',label:'標準 (16px)',icon:'A',value:'16px', desc:'標準的な文字サイズ（16px）です。'},
-  'pre-font-m':{group:'fontsize',label:'やや大 (20px)',icon:'A',value:'20px', desc:'少し大きめの文字サイズ（20px）です。'},
-  'pre-font-l':{group:'fontsize',label:'大 (24px)',icon:'A',value:'24px', desc:'大きめの文字サイズ（24px）です。'},
-  'pre-font-xl':{group:'fontsize',label:'特大 (32px)',icon:'A',value:'32px', desc:'特大の文字サイズ（32px）です。'},
-  'pre-font-xxl':{group:'fontsize',label:'特大 (48px)',icon:'A',value:'48px', desc:'巨大な見出し等に使う文字サイズ（48px）です。'},
-  'pre-radius-0':{group:'radius',label:'角ばる (0)',icon:'▢',value:'0', desc:'角の丸みをなくし四角にします。'},
-  'pre-radius-m':{group:'radius',label:'中 (8px)',icon:'⬜',value:'8px', desc:'角をほどよく丸めます（8px）。'},
-  'pre-radius-round':{group:'radius',label:'丸ボタン',icon:'⚪',value:'999px', desc:'ボタンなどを完全にカプセル状・丸型にします。'},
-  'pre-weight-normal':{group:'weight',label:'普通',icon:'A',value:'normal', desc:'文字の太さを標準にします。'},
-  'pre-weight-bold':{group:'weight',label:'太字',icon:'B',value:'bold', desc:'文字を太字にします。'},
-  'pre-align-l':{group:'align',label:'左揃え',icon:'⬅',value:'left', desc:'文章を左揃えにします。'},
-  'pre-align-c':{group:'align',label:'中央揃え',icon:'↔',value:'center', desc:'文章を中央揃えにします。'},
-  'pre-align-r':{group:'align',label:'右揃え',icon:'➡',value:'right', desc:'文章を右揃えにします。'},
-  'pre-display-block':{group:'display',label:'ブロック',icon:'▭',value:'block', desc:'要素を1行全体に広げ縦並びにする表示モードです。'},
-  'pre-display-flex':{group:'display',label:'フレックス',icon:'🔀',value:'flex', desc:'子要素を柔軟に横並び・配置制御する表示モードです。'},
-  'pre-display-none':{group:'display',label:'非表示',icon:'🚫',value:'none', desc:'要素を画面から隠します。'},
-  'pre-flexdir-row':{group:'flexdir',label:'横に並べる',icon:'↔',value:'row', desc:'フレックス内で子要素を横方向に並べます。'},
-  'pre-flexdir-col':{group:'flexdir',label:'縦に並べる',icon:'↕',value:'column', desc:'フレックス内で子要素を縦方向に並べます。'},
-  'pre-justify-center':{group:'justify',label:'中央',icon:'↔',value:'center', desc:'横方向の配置を中央寄せにします。'},
-  'pre-justify-between':{group:'justify',label:'両端揃え',icon:'↔',value:'space-between', desc:'子要素同士を均等配置し、両端に寄せます。'},
-  'pre-alignitems-center':{group:'alignitems',label:'中央',icon:'↕',value:'center', desc:'縦方向の配置を中央揃えにします。'},
-  'pre-lineheight-normal':{group:'lineheight',label:'標準(1.5)',icon:'☰',value:'1.5', desc:'読みやすい標準的な行高（1.5倍）です。'},
-  'pre-lineheight-loose':{group:'lineheight',label:'広い(2)',icon:'☰',value:'2', desc:'ゆったりとした行高（2.0倍）です。'},
-  'pre-letterspacing-sm':{group:'letterspacing',label:'狭め(1px)',icon:'⟷',value:'1px', desc:'文字と文字の間隔を1px広げます。'},
-  'pre-textdecoration-none':{group:'textdecoration',label:'なし',icon:'⊘',value:'none', desc:'文字の装飾（下線など）を解除します。'},
-  'pre-textdecoration-under':{group:'textdecoration',label:'下線',icon:'U',value:'underline', desc:'文字に下線を引きます。'},
-  'pre-opacity-50':{group:'opacity',label:'半分(0.5)',icon:'🌓',value:'0.5', desc:'要素を半透明（50%）にします。'},
-  'pre-opacity-100':{group:'opacity',label:'不透明(1)',icon:'🌕',value:'1', desc:'要素を完全不透明（100%）にします。'},
-  'pre-border-none':{group:'border',label:'枠線なし',icon:'⊘',value:'none', desc:'枠線を消去します。'},
-  'pre-border-thin':{group:'border',label:'細い枠線',icon:'▭',value:'1px solid #cccccc', desc:'1pxのグレーの細い実線を表示します。'},
-  'pre-shadow-soft':{group:'shadow',label:'柔らかい影',icon:'🌫',value:'0 2px 6px rgba(0,0,0,0.15)', desc:'ほんのり浮かび上がるような柔らかい影をつけます。'},
-  'pre-svg-circle':{group:'svg',label:'円',icon:'⭕',value:'<circle cx="100" cy="100" r="80" fill="#2ec4a6"/>', desc:'SVG内の円グラフィックコードです。'},
-  'pre-svg-rect':{group:'svg',label:'四角',icon:'▭',value:'<rect x="20" y="20" width="160" height="160" fill="#3498db"/>', desc:'SVG内の四角形グラフィックコードです。'},
-  'pre-svg-star':{group:'svg',label:'星',icon:'⭐',value:'<polygon points="100,20 120,80 185,80 132,120 152,180 100,145 48,180 68,120 15,80 80,80" fill="#f1c40f"/>', desc:'SVG内の星型グラフィックコードです。'},
-  'pre-svg-heart':{group:'svg',label:'ハート',icon:'❤️',value:'<path d="M100,180 C40,130 20,90 20,70 C20,40 45,20 70,20 C85,20 95,30 100,40 C105,30 115,20 130,20 C155,20 180,40 180,70 C180,90 160,130 100,180Z" fill="#e74c3c"/>', desc:'SVG内のハート型グラフィックコードです。'},
-  'pre-int-10':{group:'interval',label:'0.01秒 (10ms)',icon:'⏱',value:'10', desc:'10ミリ秒（非常に高速な繰返しタイマー）です。'},
-  'pre-int-50':{group:'interval',label:'0.05秒 (50ms)',icon:'⏱',value:'50', desc:'50ミリ秒です。'},
-  'pre-int-100':{group:'interval',label:'0.1秒 (100ms)',icon:'⏱',value:'100', desc:'100ミリ秒（アニメーション等によく使われます）です。'},
-  'pre-int-500':{group:'interval',label:'0.5秒 (500ms)',icon:'⏱',value:'500', desc:'500ミリ秒（0.5秒間隔）です。'},
-  'pre-int-1000':{group:'interval',label:'1秒 (1000ms)',icon:'⏱',value:'1000', desc:'1000ミリ秒（1秒間隔）です。'},
-  'pre-sec-3':{group:'seconds',label:'3秒',icon:'⏳',value:'3', desc:'カウントダウンなどの3秒設定値です。'},
-  'pre-sec-5':{group:'seconds',label:'5秒',icon:'⏳',value:'5', desc:'5秒のタイマー数値です。'},
-  'pre-sec-10':{group:'seconds',label:'10秒',icon:'⏳',value:'10', desc:'10秒のタイマー数値です。'},
-  'pre-sec-30':{group:'seconds',label:'30秒',icon:'⏳',value:'30', desc:'30秒のタイマー数値です。'},
-  'pre-sec-60':{group:'seconds',label:'60秒',icon:'⏳',value:'60', desc:'60秒（1分）のタイマー数値です。'},
-  'pre-api-todo':{group:'api',label:'サンプル(todo)',icon:'🌐',value:'https://jsonplaceholder.typicode.com/todos/1', desc:'APIデータ取得の動作テスト用URL（ToDoデータ）です。'},
-  'pre-api-user':{group:'api',label:'ユーザー情報',icon:'👤',value:'https://jsonplaceholder.typicode.com/users/1', desc:'APIテスト用のダミーユーザーデータ取得URLです。'},
-  'pre-api-ip':{group:'api',label:'IPアドレス',icon:'🌐',value:'https://api.ipify.org?format=json', desc:'自身のIPアドレスを取得できるWeb APIのサンプルです。'},
-  'pre-freq-low':{group:'freq',label:'低音 (220Hz)',icon:'🔊',value:'220', desc:'220Hz（ラ / A3）の低音周波数です。'},
-  'pre-freq-mid':{group:'freq',label:'標準 (440Hz)',icon:'🔊',value:'440', desc:'440Hz（時報の音・A4）の標準周波数です。'},
-  'pre-freq-high':{group:'freq',label:'高音 (880Hz)',icon:'🔊',value:'880', desc:'880Hz（高音のラ / A5）の周波数です。'},
-  'pre-dur-short':{group:'duration',label:'短い (100ms)',icon:'⏱',value:'100', desc:'0.1秒間の短い音の再生時間です。'},
-  'pre-dur-mid':{group:'duration',label:'普通 (200ms)',icon:'⏱',value:'200', desc:'0.2秒間の音の再生時間です。'},
-  'pre-dur-long':{group:'duration',label:'長い (500ms)',icon:'⏱',value:'500', desc:'0.5秒間の長めの音の再生時間です。'},
-  'pre-vib-short':{group:'vibrate',label:'短い (100ms)',icon:'📳',value:'100', desc:'スマホを0.1秒短くバイブレーションさせます。'},
-  'pre-vib-mid':{group:'vibrate',label:'普通 (200ms)',icon:'📳',value:'200', desc:'スマホを0.2秒バイブレーションさせます。'},
-  'pre-vib-long':{group:'vibrate',label:'長い (500ms)',icon:'📳',value:'500', desc:'スマホを0.5秒長めにバイブレーションさせます。'}
-};
-
-const BLOCKS = {
-  'box': { cat:'design', label:'装飾ボックス', icon:'📦', tag:'div', container:true, slots:['container','css','event'],
-    desc:'シンプルな枠線付きのグループボックスを作成します。中に他の要素を入れられます。',
-    baseStyle:'border:1px solid #d0d7de; border-radius:8px; padding:16px; margin:12px 0; background:#fafbfc;',
-    fields:[{k:'id', label:'ID', type:'text'}] },
-  'card': { cat:'design', label:'カード', icon:'🃏', tag:'div', container:true, slots:['container','css','event'],
-    desc:'影のついたモダンなカード風コンテナを作成します。商品や記事の表示に最適です。',
-    baseStyle:'border:1px solid #e0e4e8; border-radius:14px; padding:20px; margin:14px 0; box-shadow:0 4px 12px rgba(20,30,40,.08); background:#fff;',
-    fields:[{k:'id', label:'ID', type:'text'}] },
-  'center': { cat:'design', label:'中央寄せ', icon:'🎯', tag:'div', container:true, slots:['container','css','event'],
-    desc:'内部のコンテンツやテキストを自動的に中央揃えにする枠です。',
-    baseStyle:'text-align:center; margin:12px 0;', fields:[{k:'id', label:'ID', type:'text'}] },
-  'row': { cat:'design', label:'横並び', icon:'↔', tag:'div', container:true, slots:['container','css','event'],
-    desc:'内部に配置した要素を横一列に並べます（はみ出すと自動改行されます）。',
-    baseStyle:'display:flex; flex-direction:row; gap:12px; flex-wrap:wrap; align-items:center; margin:12px 0;',
-    fields:[{k:'id', label:'ID', type:'text'}] },
-  'column': { cat:'design', label:'縦並び', icon:'↕', tag:'div', container:true, slots:['container','css','event'],
-    desc:'内部の要素を垂直（縦方向）に隙間をあけて一列に並べます。',
-    baseStyle:'display:flex; flex-direction:column; gap:8px; margin:12px 0;',
-    fields:[{k:'id', label:'ID', type:'text'}] },
-  'grid2': { cat:'design', label:'2列グリッド', icon:'⊞', tag:'div', container:true, slots:['container','css','event'],
-    desc:'要素を均等な2列のレイアウトで綺麗に整列させます。',
-    baseStyle:'display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:12px 0;',
-    fields:[{k:'id', label:'ID', type:'text'}] },
-  'grid3': { cat:'design', label:'3列グリッド', icon:'⊟', tag:'div', container:true, slots:['container','css','event'],
-    desc:'要素を均等な3列のレイアウトで並べます。ギャラリー等に向いています。',
-    baseStyle:'display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin:12px 0;',
-    fields:[{k:'id', label:'ID', type:'text'}] },
-  'spacer': { cat:'design', label:'余白スペーサー', icon:'⬜', tag:'div', container:true, slots:['css'], emptyOk:true,
-    desc:'要素同士の間に一定の縦の空間（隙間）を作るための透明なスペーサーです。',
-    baseStyle:'height:32px;', fields:[] },
-  'alert': { cat:'design', label:'通知ボックス（黄）', icon:'⚠', tag:'div', container:true, slots:['container','css','event'],
-    desc:'黄色い注意メッセージ用の背景つきボックスです。警告・補足などに使います。',
-    baseStyle:'background:#fff8e1; border-left:4px solid #f0ad4e; border-radius:6px; padding:12px 16px; margin:12px 0; color:#6b5400;',
-    fields:[{k:'id', label:'ID', type:'text'}] },
-  'info-box': { cat:'design', label:'情報ボックス（青）', icon:'ℹ️', tag:'div', container:true, slots:['container','css','event'],
-    desc:'青い情報表示用のボックスです。お知らせやワンポイント解説に使用します。',
-    baseStyle:'background:#e8f4fd; border-left:4px solid #4a9eff; border-radius:6px; padding:12px 16px; margin:12px 0; color:#0d3e6b;',
-    fields:[{k:'id', label:'ID', type:'text'}] },
-  'success-box': { cat:'design', label:'成功ボックス（緑）', icon:'✅', tag:'div', container:true, slots:['container','css','event'],
-    desc:'緑色の成功・完了メッセージ表示用のボックスです。処理成功通知などに適しています。',
-    baseStyle:'background:#e8f8ef; border-left:4px solid #2ec4a6; border-radius:6px; padding:12px 16px; margin:12px 0; color:#0d5232;',
-    fields:[{k:'id', label:'ID', type:'text'}] },
-  'error-box': { cat:'design', label:'エラーボックス（赤）', icon:'❌', tag:'div', container:true, slots:['container','css','event'],
-    desc:'赤色のエラー・警告用メッセージボックスです。',
-    baseStyle:'background:#fdecec; border-left:4px solid #e74c3c; border-radius:6px; padding:12px 16px; margin:12px 0; color:#7c1d10;',
-    fields:[{k:'id', label:'ID', type:'text'}] },
-  'divider-text': { cat:'design', label:'見出し区切り線', icon:'┈', tag:'div', container:true, slots:['css','event'],
-    desc:'左右に線がついた見出し・区切り行です。デザインのアクセントになります。',
-    baseStyle:'display:flex; align-items:center; gap:12px; margin:20px 0; color:#8b97a3;',
-    fields:[{k:'id', label:'ID', type:'text'}] },
-
-  'img': { cat:'media', label:'画像', icon:'🖼', tag:'img', voidTag:true, slots:['css','event'],
-    desc:'Web上の画像を表示します (imgタグ)。URLや代替テキストを設定します。',
-    fields:[{k:'id', label:'ID', type:'text'},{k:'src', label:'URL', type:'url', ph:'https://…', presetGroup:'url'},{k:'alt', label:'代替テキスト', type:'text'},{k:'media', type:'hidden'}]},
-  'video': { cat:'media', label:'動画', icon:'🎬', tag:'video', slots:['css','event'],
-    desc:'動画ファイルを再生するプレイヤーを表示します (videoタグ)。',
-    hint:'IDを付けて「📊 動画と同期するバー」を組み合わせると進捗バーで再生位置を表示できます。',
-    fields:[{k:'id', label:'ID', type:'text', def:'video1'},{k:'src', label:'URL', type:'url', presetGroup:'url'},{k:'media', type:'hidden'}]},
-  'audio': { cat:'media', label:'音声', icon:'🔊', tag:'audio', slots:['css','event'],
-    desc:'音楽や音声ファイルを再生するプレイヤーを配置します (audioタグ)。',
-    fields:[{k:'id', label:'ID', type:'text'},{k:'src', label:'URL', type:'url', presetGroup:'url'},{k:'media', type:'hidden'}]},
-  'iframe': { cat:'media', label:'埋め込み', icon:'🌐', tag:'iframe', slots:['css'],
-    desc:'他のWebサイトやYouTube動画、Googleマップなどを枠内に埋め込んで表示します。',
-    fields:[{k:'id', label:'ID', type:'text'},{k:'src', label:'URL', type:'url', presetGroup:'url'},{k:'w', label:'幅', type:'text', def:'560', presetGroup:'size'},{k:'h', label:'高さ', type:'text', def:'315', presetGroup:'size'}]},
-  'canvas': { cat:'media', label:'キャンバス', icon:'🖌', tag:'canvas', slots:['css','event'],
-    desc:'JavaScriptなどで図形やゲーム描画を行うためのグラフィック領域を作成します。',
-    fields:[{k:'id', label:'ID', type:'text', def:'canvas1'},{k:'w', label:'幅', type:'number', def:'400', presetGroup:'size'},{k:'h', label:'高さ', type:'number', def:'300', presetGroup:'size'}]},
-  'svg': { cat:'media', label:'SVG図形', icon:'🎨', tag:'svg', slots:['css','event'],
-    desc:'拡大してもボケないベクター図形 (SVG) を描写・配置できます。',
-    fields:[
-      {k:'id', label:'ID', type:'text', def:'svg1'},
-      {k:'w', label:'幅', type:'number', def:'200', presetGroup:'size'},
-      {k:'h', label:'高さ', type:'number', def:'200', presetGroup:'size'},
-      {k:'inner', label:'SVGコード', type:'textarea', def:'<circle cx="100" cy="100" r="80" fill="#2ec4a6"/>', presetGroup:'svg'}
-    ]},
-  'figure': { cat:'media', label:'図 (figure)', icon:'🖼', tag:'figure', container:true, slots:['container','css','event'],
-    desc:'画像やイラストとキャプション（解説文）をまとめる構造タグです。',
-    fields:[{k:'id', label:'ID', type:'text'}] },
-  'figcaption': { cat:'media', label:'図のキャプション', icon:'📝', tag:'figcaption', textTag:true, slots:['css','var','event'],
-    desc:'図 (figure) に添える説明文テキストです。',
-    fields:[{k:'id', label:'ID', type:'text'},{k:'text', label:'テキスト', type:'text', def:'図の説明'}]},
-  'progress': { cat:'media', label:'進捗バー', icon:'📊', tag:'progress', slots:['css'],
-    desc:'タスクの達成度やダウンロード等の進行状況（プログレスバー）を表示します。',
-    hint:'IDを付けて「📊 進捗を数値で設定」「⏱ 時間で自動進行」「📊 動画と同期」などで操作します。',
-    fields:[{k:'id', label:'ID', type:'text', def:'prog1'},{k:'value', label:'現在値', type:'number', def:'0'},{k:'max', label:'最大値', type:'number', def:'100'}]},
-  'meter': { cat:'media', label:'メーター', icon:'🎛', tag:'meter', slots:['css'],
-    desc:'ディスク容量や温度など、一定範囲内の数量を示すメーターを表示します。',
-    fields:[{k:'id', label:'ID', type:'text', def:'meter1'},{k:'value', label:'現在値', type:'number', def:'0'},{k:'min', label:'最小', type:'number', def:'0'},{k:'max', label:'最大', type:'number', def:'100'}]},
-
-  'heading': { cat:'text', label:'見出し', icon:'H', tag:'h', slots:['css','var','event'],
-    desc:'文書の見出し (h1〜h6) を作成します。大きさをレベルで選べます。',
-    fields:[{k:'level', label:'レベル', type:'select', options:['1','2','3','4','5','6'], def:'2'},{k:'id', label:'ID', type:'text'},{k:'text', label:'テキスト', type:'text', def:'見出しテキスト'}]},
-  'p': { cat:'text', label:'段落', icon:'¶', tag:'p', textTag:true, slots:['css','var','event'],
-    desc:'一般的な文章の段落 (pタグ) です。標準的なテキスト入力に使用します。',
-    fields:[{k:'id', label:'ID', type:'text'},{k:'text', label:'テキスト', type:'textarea', def:'ここに文章を入力します。'}]},
-  'br': { cat:'text', label:'改行', icon:'↵', tag:'br', voidTag:true, slots:[], desc:'文章の途中で強制的におりかえす改行タグです。', fields:[] },
-  'hr': { cat:'text', label:'区切り線', icon:'─', tag:'hr', voidTag:true, slots:['css'], desc:'段落間に水平の境界線 (hr) を引きます。', fields:[] },
-  'b': { cat:'text', label:'太字', icon:'B', tag:'b', textTag:true, slots:['css','var','event'], desc:'テキストを太字で表示します。', fields:[{k:'id', label:'ID', type:'text'},{k:'text', label:'テキスト', type:'text', def:'太字'}]},
-  'strong': { cat:'text', label:'強調', icon:'💪', tag:'strong', textTag:true, slots:['css','var','event'], desc:'重要なテキストであることを強調表示（太字）します。', fields:[{k:'id', label:'ID', type:'text'},{k:'text', label:'テキスト', type:'text', def:'強調'}]},
-  'i': { cat:'text', label:'斜体', icon:'I', tag:'i', textTag:true, slots:['css','var','event'], desc:'テキストを斜体（イタリック）で表示します。', fields:[{k:'id', label:'ID', type:'text'},{k:'text', label:'テキスト', type:'text', def:'斜体'}]},
-  'em': { cat:'text', label:'強調(em)', icon:'❗', tag:'em', textTag:true, slots:['css','var','event'], desc:'文脈上の強調を示します（通常は斜体表示）。', fields:[{k:'id', label:'ID', type:'text'},{k:'text', label:'テキスト', type:'text', def:'強調'}]},
-  'u': { cat:'text', label:'下線', icon:'U', tag:'u', textTag:true, slots:['css','var','event'], desc:'文字に下線を表示します。', fields:[{k:'id', label:'ID', type:'text'},{k:'text', label:'テキスト', type:'text', def:'下線'}]},
-  's': { cat:'text', label:'取消線', icon:'S', tag:'s', textTag:true, slots:['css','var','event'], desc:'文字に打ち消し線を表示します。', fields:[{k:'id', label:'ID', type:'text'},{k:'text', label:'テキスト', type:'text', def:'取消線'}]},
-  'mark': { cat:'text', label:'ハイライト', icon:'🖍', tag:'mark', textTag:true, slots:['css','var','event'], desc:'蛍光ペンのように背景黄色でハイライト強調します。', fields:[{k:'id', label:'ID', type:'text'},{k:'text', label:'テキスト', type:'text', def:'マーカー'}]},
-  'small': { cat:'text', label:'小さい文字', icon:'ᵃ', tag:'small', textTag:true, slots:['css','var','event'], desc:'注記や補足文用に小さめの文字で表示します。', fields:[{k:'id', label:'ID', type:'text'},{k:'text', label:'テキスト', type:'text', def:'小さめ'}]},
-  'sub': { cat:'text', label:'下付き', icon:'ₓ', tag:'sub', textTag:true, slots:['css','var','event'], desc:'化学式や添字などで使う下付き文字です。', fields:[{k:'id', label:'ID', type:'text'},{k:'text', label:'テキスト', type:'text', def:'2'}]},
-  'sup': { cat:'text', label:'上付き', icon:'ˣ', tag:'sup', textTag:true, slots:['css','var','event'], desc:'乗数や注釈番号などに使う上付き文字です。', fields:[{k:'id', label:'ID', type:'text'},{k:'text', label:'テキスト', type:'text', def:'2'}]},
-  'blockquote': { cat:'text', label:'引用ブロック', icon:'❞', tag:'blockquote', textTag:true, slots:['css','var','event'], desc:'他サイトや書籍等からの引用文を囲むブロックです。', fields:[{k:'id', label:'ID', type:'text'},{k:'text', label:'引用文', type:'textarea', def:'引用文'}]},
-  'time': { cat:'text', label:'日時', icon:'🕐', tag:'time', textTag:true, slots:['css','var','event'],
-    desc:'日付や時間を表す要素です。コンピュータが解析しやすい日時を保持できます。',
-    fields:[{k:'id', label:'ID', type:'text'},{k:'datetime', label:'datetime', type:'text', def:'2026-01-01'},{k:'text', label:'表示文字', type:'text', def:'2026年1月1日'}]},
-  'kbd': { cat:'text', label:'キー', icon:'⌨', tag:'kbd', textTag:true, slots:['css','var','event'], desc:'キーボード操作の入力（「Ctrl+C」など）をスタイル表示します。', fields:[{k:'id', label:'ID', type:'text'},{k:'text', label:'キー', type:'text', def:'Ctrl + C'}]},
-  'code': { cat:'text', label:'コード', icon:'💻', tag:'code', textTag:true, slots:['css','var','event'], desc:'プログラムコードの小片を等幅フォントで表示します。', fields:[{k:'id', label:'ID', type:'text'},{k:'text', label:'コード', type:'text', def:'code'}]},
-  'pre': { cat:'text', label:'整形済み', icon:'📄', tag:'pre', textTag:true, slots:['css','var','event'], desc:'改行やスペースをそのまま画面に反映して表示するテキストブロックです。', fields:[{k:'id', label:'ID', type:'text'},{k:'text', label:'テキスト', type:'textarea', def:'複数行の\nテキスト'}]},
-  'span': { cat:'text', label:'スパン', icon:'S', tag:'span', textTag:true, slots:['css','var','event'],
-    desc:'文中の特定の部分だけにスタイルや動的変化をつけたい時に使うインライン要素です。',
-    fields:[{k:'id', label:'ID', type:'text'},{k:'text', label:'テキスト', type:'text', def:'テキスト'}]},
-  'html-raw': { cat:'text', label:'生のHTML挿入', icon:'🔧', tag:'div', container:true, slots:['css'], emptyOk:true,
-    desc:'HTMLコードを直接記述して埋め込むことができる高度なブロックです。',
-    fields:[{k:'id', label:'ID', type:'text'},{k:'raw', label:'HTMLコード', type:'textarea', def:'<b>カスタムHTML</b>'}]},
-
-  'a': { cat:'interactive', label:'リンク', icon:'🔗', tag:'a', textTag:true, slots:['css','var','event'],
-    desc:'クリックで他のWebページやファイルへジャンプするリンクを作成します。',
-    fields:[{k:'id', label:'ID', type:'text'},{k:'href', label:'URL', type:'url', def:'#', presetGroup:'url'},{k:'target', label:'target', type:'select', options:[{v:'',l:'同ウィンドウ'},{v:'_blank',l:'新しいタブ'}], def:''},{k:'text', label:'表示文字', type:'text', def:'リンク'}]},
-  'button': { cat:'interactive', label:'ボタン', icon:'🔘', tag:'button', slots:['css','var','event'],
-    desc:'クリックイベントを起動させる一般的なボタン要素です。',
-    hint:'「値」に数値や文字を入れると、クリック時に「📤 値を表示」や「💾 値を変数に保存」で取り出せます。',
-    fields:[
-      {k:'id', label:'ID', type:'text', def:'btn1'},
-      {k:'text', label:'ラベル', type:'text', def:'ボタン'},
-      {k:'value', label:'値（数値・文字）', type:'text', def:''}
-    ]},
-
-  'div': { cat:'containers', label:'グループ (div)', icon:'📦', tag:'div', container:true, slots:['container','css','event'],
-    desc:'要素を自由にまとめるための汎用グループ化コンテナです。',
-    fields:[{k:'id', label:'ID', type:'text'}]},
-  'main': { cat:'containers', label:'メイン', icon:'📄', tag:'main', container:true, slots:['container','css','event'], desc:'ページ内の主要なコンテンツ領域を括る構造タグです。', fields:[{k:'id', label:'ID', type:'text'}] },
-  'header': { cat:'containers', label:'ヘッダー', icon:'🔝', tag:'header', container:true, slots:['container','css','event'], desc:'ページの最上部や見出し領域を構成するタグです。', fields:[{k:'id', label:'ID', type:'text'}] },
-  'footer': { cat:'containers', label:'フッター', icon:'🔻', tag:'footer', container:true, slots:['container','css','event'], desc:'ページの最下部（著作権表示等）を構成するタグです。', fields:[{k:'id', label:'ID', type:'text'}] },
-  'section': { cat:'containers', label:'セクション', icon:'🗂', tag:'section', container:true, slots:['container','css','event'],
-    desc:'ひとまとまりの章や節（セクション）を表現する構造タグです。',
-    fields:[{k:'id', label:'ID', type:'text'}]},
-  'nav': { cat:'containers', label:'ナビ', icon:'🧭', tag:'nav', container:true, slots:['container','css','event'], desc:'主要なナビゲーションリンク群を括るタグです。', fields:[{k:'id', label:'ID', type:'text'}] },
-  'article': { cat:'containers', label:'記事', icon:'📰', tag:'article', container:true, slots:['container','css','event'], desc:'単体で独立した記事・ブログ投稿などを表すタグです。', fields:[{k:'id', label:'ID', type:'text'}] },
-  'aside': { cat:'containers', label:'サイド', icon:'📑', tag:'aside', container:true, slots:['container','css','event'], desc:'補足情報やサイドバー領域を表す構造タグです。', fields:[{k:'id', label:'ID', type:'text'}] },
-  'details': { cat:'containers', label:'開閉 (details)', icon:'📂', tag:'details', container:true, slots:['container','css','event'],
-    desc:'クリックで開閉アコーディオンができる表示枠を作成します。',
-    fields:[{k:'id', label:'ID', type:'text'},{k:'open', label:'初期状態', type:'select', options:[{v:'',l:'閉じる'},{v:'open',l:'開く'}], def:''}]},
-  'summary': { cat:'containers', label:'見出し (summary)', icon:'🔽', tag:'summary', textTag:true, slots:['css','var','event'],
-    desc:'開閉枠 (details) の見出し部分を指定します。',
-    fields:[{k:'id', label:'ID', type:'text'},{k:'text', label:'テキスト', type:'text', def:'クリックで開く'}]},
-  'dialog': { cat:'containers', label:'ダイアログ', icon:'💬', tag:'dialog', container:true, slots:['container','css'],
-    desc:'ポップアップモーダル表示用のダイアログを作成します。',
-    fields:[{k:'id', label:'ID', type:'text', def:'dlg1'}]},
-  'fieldset': { cat:'containers', label:'グループ枠', icon:'🔲', tag:'fieldset', container:true, slots:['container','css','event'], desc:'フォーム内の関連項目を線で囲んでまとめる枠です。', fields:[{k:'id', label:'ID', type:'text'}] },
-  'legend': { cat:'containers', label:'グループ見出し', icon:'🏷', tag:'legend', textTag:true, slots:['css','var','event'],
-    desc:'グループ枠 (fieldset) のタイトル見出しです。',
-    fields:[{k:'id', label:'ID', type:'text'},{k:'text', label:'テキスト', type:'text', def:'お問い合わせ'}]},
-
-  'ul': { cat:'lists', label:'箇条書き', icon:'•', tag:'ul', container:true, slots:['container','css','event'],
-    desc:'箇条書きのリスト（・付き）を作成します。内部にリスト項目(li)を入れます。',
-    fields:[{k:'id', label:'ID', type:'text'}]},
-  'ol': { cat:'lists', label:'番号つき', icon:'1.', tag:'ol', container:true, slots:['container','css','event'],
-    desc:'1, 2, 3...と番号がついた順序リストを作成します。',
-    fields:[{k:'id', label:'ID', type:'text'},{k:'start', label:'開始番号', type:'number', def:'1'}]},
-  'li': { cat:'lists', label:'リスト項目', icon:'–', tag:'li', textTag:true, slots:['css','var','event'],
-    desc:'リスト(ulやol)の各項目を表します。',
-    fields:[{k:'id', label:'ID', type:'text'},{k:'value', label:'番号(ol内のみ)', type:'number'},{k:'text', label:'テキスト', type:'text', def:'項目'}]},
-  'dl': { cat:'lists', label:'定義リスト', icon:'📖', tag:'dl', container:true, slots:['container','css','event'],
-    desc:'用語(dt)と説明(dd)のセットをまとめる定義リストです。',
-    fields:[{k:'id', label:'ID', type:'text'}]},
-  'dt': { cat:'lists', label:'用語', icon:'📗', tag:'dt', textTag:true, slots:['css','var','event'], desc:'定義リストの用語見出しです。', fields:[{k:'id', label:'ID', type:'text'},{k:'text', label:'用語', type:'text', def:'用語'}]},
-  'dd': { cat:'lists', label:'説明', icon:'📘', tag:'dd', textTag:true, slots:['css','var','event'], desc:'定義リストの用語に対する説明文章です。', fields:[{k:'id', label:'ID', type:'text'},{k:'text', label:'説明', type:'text', def:'説明文'}]},
-
-  'table': { cat:'tables', label:'表 (table)', icon:'📊', tag:'table', container:true, slots:['container','css','event'],
-    desc:'データ表示用の表（テーブル）を作成します。行(tr)やセル(td, th)を入れます。',
-    fields:[{k:'id', label:'ID', type:'text'}]},
-  'caption': { cat:'tables', label:'表のタイトル', icon:'🏷', tag:'caption', textTag:true, slots:['css','var','event'],
-    desc:'表の上に表示するタイトルキャプションです。',
-    fields:[{k:'id', label:'ID', type:'text'},{k:'text', label:'テキスト', type:'text', def:'表のタイトル'}]},
-  'thead': { cat:'tables', label:'ヘッダ行', icon:'🔝', tag:'thead', container:true, slots:['container','css','event'],
-    desc:'表のヘッダー（最上部見出し行群）を構成します。',
-    fields:[{k:'id', label:'ID', type:'text'}] },
-  'tbody': { cat:'tables', label:'本体', icon:'📄', tag:'tbody', container:true, slots:['container','css','event'],
-    desc:'表のデータ本体部分を括ります。',
-    fields:[{k:'id', label:'ID', type:'text'}] },
-  'tfoot': { cat:'tables', label:'フッタ行', icon:'🔻', tag:'tfoot', container:true, slots:['container','css','event'],
-    desc:'表のフッター（最下部合計行など）を構成します。',
-    fields:[{k:'id', label:'ID', type:'text'}] },
-  'tr': { cat:'tables', label:'行 (tr)', icon:'➖', tag:'tr', container:true, slots:['container','css','event'],
-    desc:'表の1行分（横一列）を表します。中にセルを配置します。',
-    fields:[{k:'id', label:'ID', type:'text'}] },
-  'th': { cat:'tables', label:'見出しセル', icon:'🔤', tag:'th', textTag:true, slots:['css','var','event'],
-    desc:'表の見出し用セルです（標準で太字・中央揃え）。',
-    fields:[{k:'id', label:'ID', type:'text'},{k:'colspan', label:'colspan', type:'number'},{k:'text', label:'テキスト', type:'text', def:'見出し'}]},
-  'td': { cat:'tables', label:'セル', icon:'🔡', tag:'td', textTag:true, slots:['css','var','event'],
-    desc:'表のデータセルです。',
-    fields:[{k:'id', label:'ID', type:'text'},{k:'colspan', label:'colspan', type:'number'},{k:'text', label:'テキスト', type:'text', def:'セル'}]},
-
-  'form': { cat:'forms', label:'フォーム (form)', icon:'🧾', tag:'form', container:true, slots:['container','css','event'],
-    desc:'入力項目や送信ボタンをまとめるフォーム全体枠です。',
-    fields:[{k:'id', label:'ID', type:'text', def:'form1'}]},
-  'label': { cat:'forms', label:'ラベル', icon:'🏷', tag:'label', container:true, slots:['container','css','event'],
-    desc:'入力要素の説明タイトルを示すラベルです。',
-    fields:[{k:'id', label:'ID', type:'text'},{k:'for', label:'for属性', type:'text'}]},
-  'input-text': { cat:'forms', label:'1行入力', icon:'⌨️', tag:'input', voidTag:true, slots:['css','event'],
-    desc:'1行のテキストを入力できる一般的な入力欄です。',
-    fields:[{k:'id', label:'ID', type:'text', def:'input1'},{k:'ph', label:'プレースホルダー', type:'text', def:'入力してください'},{k:'list', label:'候補リストID', type:'text'}]},
-  'input-password': { cat:'forms', label:'パスワード', icon:'🔒', tag:'input', voidTag:true, slots:['css','event'],
-    desc:'入力内容が「●●●」と伏字になるパスワード入力欄です。',
-    fields:[{k:'id', label:'ID', type:'text', def:'pw1'},{k:'ph', label:'プレースホルダー', type:'text', def:'パスワード'}]},
-  'input-email': { cat:'forms', label:'メール', icon:'✉️', tag:'input', voidTag:true, slots:['css','event'],
-    desc:'メールアドレス形式の入力を行う専用フィールドです。',
-    fields:[{k:'id', label:'ID', type:'text', def:'email1'},{k:'ph', label:'プレースホルダー', type:'text', def:'example@example.com'}]},
-  'input-url': { cat:'forms', label:'URL入力', icon:'🌐', tag:'input', voidTag:true, slots:['css','event'],
-    desc:'Webアドレス (http/https) を入力するフィールドです。',
-    fields:[{k:'id', label:'ID', type:'text', def:'url1'},{k:'ph', label:'プレースホルダー', type:'text', def:'https://…'}]},
-  'input-number': { cat:'forms', label:'数値', icon:'🔢', tag:'input', voidTag:true, slots:['css','event'],
-    desc:'数値専用の入力欄です。最小値・最大値やステップ幅を設定できます。',
-    fields:[{k:'id', label:'ID', type:'text', def:'num1'},{k:'min', label:'最小', type:'number'},{k:'max', label:'最大', type:'number'},{k:'step', label:'増分', type:'number', def:'1'}]},
-  'input-date': { cat:'forms', label:'日付', icon:'📅', tag:'input', voidTag:true, slots:['css','event'],
-    desc:'カレンダーから日付を選択・入力できるフィールドです。',
-    fields:[{k:'id', label:'ID', type:'text', def:'date1'}]},
-  'input-time': { cat:'forms', label:'時刻', icon:'⏰', tag:'input', voidTag:true, slots:['css','event'],
-    desc:'時刻（時:分）を選択・入力するフィールドです。',
-    fields:[{k:'id', label:'ID', type:'text', def:'time1'}]},
-  'input-color': { cat:'forms', label:'色選択', icon:'🎨', tag:'input', voidTag:true, slots:['css','event'],
-    desc:'カラーパレットから好きな色を選択できるピッカー要素です。',
-    fields:[{k:'id', label:'ID', type:'text', def:'color1'},{k:'value', label:'初期色', type:'color', def:'#2ec4a6', presetGroup:'color'}]},
-  'input-range': { cat:'forms', label:'スライダー', icon:'🎚', tag:'input', voidTag:true, slots:['css','event'],
-    desc:'つまみをスライドさせて数値を直感的に選択するつまみ欄です。',
-    fields:[{k:'id', label:'ID', type:'text', def:'range1'},{k:'min', label:'最小', type:'number', def:'0'},{k:'max', label:'最大', type:'number', def:'100'},{k:'value', label:'初期値', type:'number', def:'50'}]},
-  'input-file': { cat:'forms', label:'ファイル', icon:'📁', tag:'input', voidTag:true, slots:['css','event'],
-    desc:'PCやスマホから画像などのファイルを選択・参照するボタンです。',
-    fields:[{k:'id', label:'ID', type:'text', def:'file1'},{k:'accept', label:'種類', type:'text', presetGroup:'accept'}]},
-  'input-hidden': { cat:'forms', label:'隠しフィールド', icon:'👻', tag:'input', voidTag:true, slots:['css','event'],
-    desc:'画面には表示されないが、裏で固定のデータや値を保持できる隠し要素です。',
-    fields:[{k:'id', label:'ID', type:'text', def:'hidden1'},{k:'value', label:'値', type:'text', def:'値'}]},
-  'textarea': { cat:'forms', label:'複数行入力', icon:'📝', tag:'textarea', slots:['css','event'],
-    desc:'長文やメッセージを入力できる複数行のテキスト領域です。',
-    fields:[{k:'id', label:'ID', type:'text', def:'textarea1'},{k:'ph', label:'プレースホルダー', type:'text', def:'ご記入ください'},{k:'rows', label:'行数', type:'number', def:'3'}]},
-  'checkbox': { cat:'forms', label:'チェックボックス', icon:'☑️', tag:'input', voidTag:true, slots:['css','event'],
-    desc:'ON/OFFの選択を行うチェックボックスです。複数選択が可能です。',
-    fields:[{k:'id', label:'ID', type:'text', def:'check1'},{k:'label', label:'ラベル', type:'text', def:'同意する'}]},
-  'radio': { cat:'forms', label:'ラジオボタン', icon:'🔘', tag:'input', voidTag:true, slots:['css','event'],
-    desc:'グループ内でどれか1つだけを選択させたい場合に使います。',
-    fields:[{k:'id', label:'ID', type:'text', def:'radio1'},{k:'name', label:'グループ名', type:'text', def:'choice'},{k:'value', label:'値', type:'text', def:'A'},{k:'label', label:'ラベル', type:'text', def:'選択肢A'}]},
-  'select': { cat:'forms', label:'セレクト', icon:'🔽', tag:'select', slots:['css','event'],
-    desc:'プルダウン形式で1つの選択肢を選ばせるメニューです。',
-    fields:[{k:'id', label:'ID', type:'text', def:'select1'},{k:'options', label:'選択肢(改行)', type:'textarea', def:'選択肢1\n選択肢2\n選択肢3'}]},
-  'optgroup': { cat:'forms', label:'選択グループ', icon:'📂', tag:'optgroup', slots:[],
-    desc:'プルダウンメニューの選択肢をカテゴリ分けしてグループ化します。',
-    fields:[{k:'id', label:'ID', type:'text'},{k:'label', label:'グループ名', type:'text', def:'グループ1'},{k:'options', label:'選択肢(改行)', type:'textarea', def:'項目1\n項目2'}]},
-  'datalist': { cat:'forms', label:'入力候補', icon:'📋', tag:'datalist', slots:[],
-    desc:'1行入力欄(input-text)に入力補完・予測候補を出せるように設定します。',
-    fields:[{k:'id', label:'ID', type:'text', def:'list1'},{k:'options', label:'候補(改行)', type:'textarea', def:'候補1\n候補2\n候補3'}]},
-  'output': { cat:'forms', label:'出力欄', icon:'📤', tag:'output', textTag:true, slots:['css','var','event'],
-    desc:'計算結果や処理されたテキストを出力表示するエリアです。',
-    fields:[{k:'id', label:'ID', type:'text', def:'out1'},{k:'text', label:'初期表示', type:'text'}]},
-  'submit': { cat:'forms', label:'送信ボタン', icon:'📨', tag:'button', slots:['css','var','event'],
-    desc:'フォームの入力内容を決定・送信するためのボタンです。',
-    fields:[{k:'id', label:'ID', type:'text', def:'submit1'},{k:'text', label:'ラベル', type:'text', def:'送信'},{k:'value', label:'値', type:'text', def:''}]},
-  'reset': { cat:'forms', label:'リセットボタン', icon:'🔄', tag:'button', slots:['css','var','event'],
-    desc:'フォームの入力内容を全消去して初期値に戻すボタンです。',
-    fields:[{k:'id', label:'ID', type:'text', def:'reset1'},{k:'text', label:'ラベル', type:'text', def:'クリア'}]},
-
-  'css-width':{cat:'css',label:'幅 width',icon:'↔',cssProp:'width',presetGroup:'size',desc:'要素の横幅を設定します（例: 100%, 300px）。',fields:[{k:'value',type:'text',def:'100%'}]},
-  'css-height':{cat:'css',label:'高さ height',icon:'↕',cssProp:'height',presetGroup:'size',desc:'要素の縦の長さを設定します（例: auto, 200px）。',fields:[{k:'value',type:'text',def:'auto'}]},
-  'css-maxwidth':{cat:'css',label:'最大幅',icon:'↔',cssProp:'max-width',presetGroup:'size',desc:'要素がこれ以上大きくならない最大横幅を決めます。',fields:[{k:'value',type:'text',def:'100%'}]},
-  'css-margin':{cat:'css',label:'外余白',icon:'⬜',cssProp:'margin',presetGroup:'size',desc:'要素の「外側」の余白を指定します。',fields:[{k:'value',type:'text',def:'0'}]},
-  'css-padding':{cat:'css',label:'内余白',icon:'🔲',cssProp:'padding',presetGroup:'size',desc:'要素の「内側」のスペース（余白）を指定します。',fields:[{k:'value',type:'text',def:'8px'}]},
-  'css-radius':{cat:'css',label:'角丸',icon:'⭕',cssProp:'border-radius',presetGroup:'radius',desc:'角を丸くする大きさを指定します（例: 8px, 999px）。',fields:[{k:'value',type:'text',def:'8px'}]},
-  'css-border':{cat:'css',label:'枠線',icon:'▭',cssProp:'border',presetGroup:'border',desc:'周囲を囲む枠線の種類・太さ・色を設定します。',fields:[{k:'value',type:'text',def:'1px solid #ccc'}]},
-  'css-color':{cat:'css',label:'文字色',icon:'🅰',cssProp:'color',presetGroup:'color',desc:'テキストの文字色を指定します。',fields:[{k:'value',type:'color',def:'#111111'}]},
-  'css-bg':{cat:'css',label:'背景色',icon:'🎨',cssProp:'background-color',presetGroup:'color',desc:'背景の塗りつぶし色を指定します。',fields:[{k:'value',type:'color',def:'#ffffff'}]},
-  'css-display':{cat:'css',label:'表示 display',icon:'📺',cssProp:'display',presetGroup:'display',desc:'要素の表示形式（ブロック、横並びフレックス、非表示など）を切替えます。',fields:[{k:'value',type:'select',options:['block','inline','inline-block','flex','grid','none'],def:'block'}]},
-  'css-flexdir':{cat:'css',label:'主軸',icon:'↔',cssProp:'flex-direction',presetGroup:'flexdir',desc:'フレックス表示時の要素の並び方向（横・縦）を設定します。',fields:[{k:'value',type:'select',options:['row','column','row-reverse','column-reverse'],def:'row'}]},
-  'css-justify':{cat:'css',label:'横配置',icon:'⇔',cssProp:'justify-content',presetGroup:'justify',desc:'フレックス内の横方向の揃え位置（左・中央・両端など）を調整します。',fields:[{k:'value',type:'select',options:['flex-start','center','flex-end','space-between','space-around'],def:'flex-start'}]},
-  'css-alignitems':{cat:'css',label:'縦配置',icon:'⇕',cssProp:'align-items',presetGroup:'alignitems',desc:'フレックス内の縦方向の揃え位置（上・中央・伸ばす等）を調整します。',fields:[{k:'value',type:'select',options:['flex-start','center','flex-end','stretch'],def:'stretch'}]},
-  'css-gap':{cat:'css',label:'間隔 gap',icon:'⏸',cssProp:'gap',presetGroup:'size',desc:'フレックスやグリッド内の子要素同士の「隙間」を設定します。',fields:[{k:'value',type:'text',def:'8px'}]},
-  'css-opacity':{cat:'css',label:'透明度',icon:'💧',cssProp:'opacity',presetGroup:'opacity',desc:'要素の透明度（0で完全透明〜1で不透明）を指定します。',fields:[{k:'value',type:'text',def:'1'}]},
-  'css-boxshadow':{cat:'css',label:'影',icon:'🌑',cssProp:'box-shadow',presetGroup:'shadow',desc:'ボックス要素の周囲に落とすドロップシャドウ（影）を指定します。',fields:[{k:'value',type:'text',def:'0 2px 6px rgba(0,0,0,0.15)'}]},
-  'css-overflow':{cat:'css',label:'はみ出し',icon:'📦',cssProp:'overflow',desc:'枠からはみ出たコンテンツの表示処理（スクロールさせる、隠す等）を決めます。',fields:[{k:'value',type:'select',options:['visible','hidden','auto','scroll'],def:'visible'}]},
-  'css-fontfamily':{cat:'css',label:'フォント',icon:'🔤',cssProp:'font-family',desc:'文字のフォント種類（ゴシック、明朝など）を選択します。',fields:[{k:'value',label:'書体',type:'select',options:FONT_OPTIONS,def:''}]},
-  'css-fontsize':{cat:'css',label:'文字サイズ',icon:'A',cssProp:'font-size',presetGroup:'fontsize',desc:'テキストのフォントサイズを設定します。',fields:[{k:'value',type:'text',def:'16px'}]},
-  'css-fontweight':{cat:'css',label:'文字の太さ',icon:'B',cssProp:'font-weight',presetGroup:'weight',desc:'文字の太さ（普通、太字など）を細かく指定します。',fields:[{k:'value',type:'select',options:['normal','bold','100','300','500','700','900'],def:'normal'}]},
-  'css-lineheight':{cat:'css',label:'行の高さ',icon:'☰',cssProp:'line-height',presetGroup:'lineheight',desc:'文章の行と行の間隔（行高）を設定します。',fields:[{k:'value',type:'text',def:'1.6'}]},
-  'css-textalign':{cat:'css',label:'文字揃え',icon:'≡',cssProp:'text-align',presetGroup:'align',desc:'文字の位置（左揃え、中央、右揃え）を調整します。',fields:[{k:'value',type:'select',options:['left','center','right','justify'],def:'left'}]},
-  'css-textdecoration':{cat:'css',label:'文字装飾',icon:'U',cssProp:'text-decoration',presetGroup:'textdecoration',desc:'下線、打ち消し線などの装飾ラインを付与します。',fields:[{k:'value',type:'select',options:['none','underline','line-through','overline'],def:'none'}]},
-  'css-cursor':{cat:'css',label:'カーソル',icon:'🖱',cssProp:'cursor',desc:'マウスカーソルが上に乗った時の形状（指マーク、テキスト選択など）を変更します。',fields:[{k:'value',type:'select',options:['default','pointer','text','move','not-allowed'],def:'pointer'}]},
-  'css-transition':{cat:'css',label:'アニメ',icon:'✨',cssProp:'transition',desc:'ホバー等で色やサイズが変わる際のスムーズな変化時間を設定します。',fields:[{k:'value',type:'text',def:'all 0.3s ease'}]},
-
-  'var-static': { cat:'variables', label:'静的テキスト', icon:'🔢', slotKind:'var',
-    desc:'変数の名前と固定のテキスト値をセットで保存・利用します。',
-    fields:[{k:'name', label:'変数名', type:'text', def:'var1'},{k:'value', label:'値', type:'text', def:'表示テキスト'}]}
-};
-
-// 残りの初期データや状態保持
-let currentTab = 'presets';
-let workspaceData = [];
-let historyStack = [];
-let historyIndex = -1;
-let selectedBlockKeyForDesc = '';
-
-// DOM初期化
-document.addEventListener('DOMContentLoaded', () => {
-  renderTabs();
-  initDescSelect();
-  renderPalette();
-  setupEventListeners();
-  updateWorkspace();
-});
-
-// ブロック説明用プルダウンの初期化
-function initDescSelect(){
-  const sel = $('#block-desc-select');
-  sel.innerHTML = '<option value="">-- ブロックを選択してください --</option>';
-  
-  // プリセット・通常ブロックをセレクトボックスに格納
-  const optGroupPresets = document.createElement('optgroup');
-  optGroupPresets.label = "🎁 プリセット";
-  Object.keys(PRESETS).forEach(k => {
-    const p = PRESETS[k];
-    const opt = document.createElement('option');
-    opt.value = k;
-    opt.textContent = `${p.icon} ${p.label}`;
-    optGroupPresets.appendChild(opt);
-  });
-  sel.appendChild(optGroupPresets);
-
-  CATEGORIES.forEach(cat => {
-    if(cat.id === 'presets' || cat.id === 'data') return;
-    const group = document.createElement('optgroup');
-    group.label = cat.label;
-    Object.keys(BLOCKS).forEach(bk => {
-      const b = BLOCKS[bk];
-      if(b.cat === cat.id){
-        const opt = document.createElement('option');
-        opt.value = bk;
-        opt.textContent = `${b.icon} ${b.label}`;
-        group.appendChild(opt);
+  // ブロック機能図鑑のデータ定義
+  const blockData = {
+    text: [
+      {
+        id: 'heading',
+        icon: '🏷️',
+        name: '見出し (H1-H6)',
+        badge: 'メイン',
+        badgeClass: 'badge-main',
+        desc: 'ページのタイトルやセクションの区切りとなる見出しテキストを作成します。',
+        params: ['テキスト内容: 表示する文字列', 'レベル: H1〜H6の大きさ選択', 'ID: 動作連携用の識別子'],
+        tip: '1ページにH1は1つだけ設置するのがSEO的に推奨されます。'
+      },
+      {
+        id: 'paragraph',
+        icon: '📄',
+        name: '段落 (p)',
+        badge: 'メイン',
+        badgeClass: 'badge-main',
+        desc: '通常の文章を表示するための基本的なテキストブロックです。',
+        params: ['テキスト: 長文も入力可能な本文', 'ID: 動作ターゲット用の識別子'],
+        tip: '「動作ブロック」と連携して、ボタンクリックで本文を差し替えることができます。'
+      },
+      {
+        id: 'output',
+        icon: '📤',
+        name: '出力欄 (Output)',
+        badge: 'メイン',
+        badgeClass: 'badge-main',
+        desc: '計算結果やボタン操作後のメッセージを表示するための専用枠です。',
+        params: ['ID: 表示書き換えに必要な名前（必須）', '初期表示テキスト: 最初に表示しておく文字'],
+        tip: '動作ブロック（クリックで文字変更・足し算結果表示など）の「表示先ID」に指定して使います。'
       }
-    });
-    if(group.children.length > 0) sel.appendChild(group);
-  });
-
-  sel.addEventListener('change', (e) => {
-    showBlockDescription(e.target.value);
-  });
-}
-
-// 説明テキストを表示する処理
-function showBlockDescription(key){
-  const txtBox = $('#block-desc-text');
-  const sel = $('#block-desc-select');   sel.value = key;    $$('.pal-item').forEach(item => {
-    if(item.dataset.key === key){
-      item.classList.add('selected-item');
-    } else {
-      item.classList.remove('selected-item');
-    }
-  });
-
-  if(!key){
-    txtBox.textContent = "ブロックを選択すると、ここに機能や使用方法の説明が表示されます。";
-    return;
-  }
-
-  if(PRESETS[key]){
-    const p = PRESETS[key];
-    txtBox.innerHTML = `<b>【プリセット】${p.icon} ${p.label}</b><br>${escapeHtml(p.desc || '設定値のショートカットです。')}<br><small style="color:#777;">値: ${escapeHtml(p.value)}</small>`;
-  } else if(BLOCKS[key]){
-    const b = BLOCKS[key];
-    txtBox.innerHTML = `<b>【${b.label}】 (HTML: &lt;${b.tag}&gt;)</b><br>${escapeHtml(b.desc || 'HTML/CSS要素の作成ブロックです。')}`;
-  } else {
-    txtBox.textContent = "説明が登録されていない項目です。";
-  }
-}
-
-// タブの描画
-function renderTabs(){
-  const tb = $('#tabbar');
-  tb.innerHTML = '';
-  CATEGORIES.forEach(c => {
-    const btn = document.createElement('button');
-    btn.className = `tab ${c.id === currentTab ? 'active' : ''} ${c.id === 'presets' ? 'preset-tab' : ''} ${c.id === 'design' ? 'design-tab' : ''} ${c.id === 'api' ? 'api-tab' : ''}`;
-    btn.textContent = c.label;
-    btn.onclick = () => {
-      currentTab = c.id;
-      renderTabs();
-      renderPalette();
-    };
-    tb.appendChild(btn);
-  });
-}
-
-// パレットリストの描画
-function renderPalette(){
-  const pl = $('#palette-list');
-  pl.innerHTML = '';
-
-  if(currentTab === 'presets'){
-    let lastGrp = '';
-    Object.keys(PRESETS).forEach(pk => {
-      const p = PRESETS[pk];
-      if(p.group !== lastGrp){
-        const gh = document.createElement('div');
-        gh.className = 'preset-group-head';
-        gh.textContent = PRESET_GROUPS[p.group] || p.group;
-        pl.appendChild(gh);
-        lastGrp = p.group;
+    ],
+    layout: [
+      {
+        id: 'box',
+        icon: '📦',
+        name: '装飾ボックス (Div)',
+        badge: 'デザイン',
+        badgeClass: 'badge-design',
+        desc: '複数のブロックをひとまとめにするための透明なコンテナ（枠）です。',
+        params: ['内側ドロップエリア: ブロックを中に配置可能', 'CSSスロット: 背景色や枠線を追加可能'],
+        tip: 'カードデザインやセクション分けのベースとして使用します。'
+      },
+      {
+        id: 'flex',
+        icon: '↔️',
+        name: '横並び (Flexbox)',
+        badge: 'デザイン',
+        badgeClass: 'badge-design',
+        desc: '内部に配置したブロックを自動的に横一列に並べるレイアウト枠です。',
+        params: ['揃え位置: 左寄せ / 中央 / 右寄せ / 均等配置', '折り返し: 画面幅が狭い時に自動改行するか'],
+        tip: 'ボタンと入力欄を横並びにしたい時に最適です。'
+      },
+      {
+        id: 'grid',
+        icon: '⊞',
+        name: '2列グリッド (Grid)',
+        badge: 'デザイン',
+        badgeClass: 'badge-design',
+        desc: '要素をきれいな2列の格子状に整列して配置できるコンテナです。',
+        params: ['列間隔: ブロック同士の隙間の広さ'],
+        tip: 'スマホ表示時には自動的に1列に折り返されるためレスポンシブにも強いです。'
       }
-      const item = createPaletteItem(pk, p.label, p.icon, 'preset-item');
-      pl.appendChild(item);
-    });
-  } else {
-    Object.keys(BLOCKS).forEach(bk => {
-      const b = BLOCKS[bk];
-      if(b.cat === currentTab){
-        const cls = b.cat === 'design' ? 'design-item' : b.cat === 'api' ? 'api-item' : '';
-        const item = createPaletteItem(bk, b.label, b.icon, cls);
-        pl.appendChild(item);
+    ],
+    form: [
+      {
+        id: 'button',
+        icon: '🔘',
+        name: 'ボタン (Button)',
+        badge: 'メイン',
+        badgeClass: 'badge-main',
+        desc: 'ユーザーがクリックしてアクションを起こすためのボタンです。',
+        params: ['ラベル: ボタンに書く文字', 'ID: ボタン自身の識別ID', '動作スロット: 実行したい「動作ブロック」をセット'],
+        tip: '「動作スロット」に動作ブロックをドロップして機能を付加します。'
+      },
+      {
+        id: 'input',
+        icon: '✏️',
+        name: '一行入力欄 (Input)',
+        badge: 'メイン',
+        badgeClass: 'badge-main',
+        desc: '名前や数値などの単文テキストをユーザーに入力してもらうフォームです。',
+        params: ['ID: 値を取得するための識別ID', 'プレースホルダー: 薄く表示するヒント文字', '入力タイプ: テキスト/数値/パスワード'],
+        tip: '計算機能や名前反映機能の「入力元ID」として使用します。'
       }
-    });
-  }
-}
-
-// パレットの各アイテム要素生成
-function createPaletteItem(key, label, icon, extraClass){
-  const div = document.createElement('div');
-  div.className = `pal-item ${extraClass || ''}`;
-  div.dataset.key = key;
-
-  div.innerHTML = `
-    <div class="drag-handle" title="ドラッグして配置">⋮⋮</div>
-    <div class="pi-body">
-      <span class="pi-icon">${icon}</span>
-      <span class="pi-label">${escapeHtml(label)}</span>
-    </div>
-  `;
-
-  // クリックした際に説明欄に反映
-  div.addEventListener('click', () => {
-    showBlockDescription(key);
-  });
-
-  // ドラッグ開始の処理
-  const handle = div.querySelector('.drag-handle');
-  handle.addEventListener('mousedown', (e) => startDrag(e, key));
-  handle.addEventListener('touchstart', (e) => startDrag(e, key), {passive:false});
-
-  return div;
-}
-
-// ドラッグ＆ドロップ用ダミー実装
-function startDrag(e, key){
-  e.preventDefault();
-  showBlockDescription(key);
-  toast(`「${BLOCKS[key]?.label || PRESETS[key]?.label}」を選択中 (ワークスペースに配置できます)`);
-}
-
-// イベントリスナーのセットアップ
-function setupEventListeners(){
-  $('#btn-export').onclick = () => toast('📄 HTMLを出力しました！');
-  $('#btn-save').onclick = () => toast('💾 プロジェクトを保存しました！');
-  $('#btn-reset').onclick = () => {
-    if(confirm('プロジェクトを初期化しますか？')){
-      $('#root-slot').innerHTML = '';
-      toast('♻ リセット完了');
-    }
+    ],
+    action: [
+      {
+        id: 'act_show',
+        icon: '💬',
+        name: 'テキスト表示',
+        badge: 'API/動作',
+        badgeClass: 'badge-api',
+        desc: 'ボタンをクリックした時に、指定したIDの出力欄へ固定の文字を表示します。',
+        params: ['表示先ID: 変化させたい出力欄のID', '表示する文字: 出力したいメッセージ'],
+        tip: 'おみくじやメッセージ表示機能に活用できます。'
+      },
+      {
+        id: 'act_calc',
+        icon: '➕',
+        name: '数値の足し算',
+        badge: 'API/動作',
+        badgeClass: 'badge-api',
+        desc: '2つの入力欄の数値を足し合わせて、結果を表示欄に出力します。',
+        params: ['入力1のID: 1つ目の数値入力欄ID', '入力2のID: 2つ目の数値入力欄ID', '出力先ID: 結果を出す枠のID'],
+        tip: '簡易電卓や見積もり計算ツールを作成できます。'
+      },
+      {
+        id: 'act_timer',
+        icon: '⏳',
+        name: 'カウントダウンタイマー',
+        badge: 'API/動作',
+        badgeClass: 'badge-api',
+        desc: '指定した秒数から0までカウントダウンを開始します。',
+        params: ['秒数: カウントダウン時間', '表示先ID: 残り時間を表示するID'],
+        tip: 'タイマー完了時に特定の処理を実行させることもできます。'
+      }
+    ],
+    preset: [
+      {
+        id: 'pre_color',
+        icon: '🎨',
+        name: 'カラープリセット',
+        badge: 'プリセット',
+        badgeClass: 'badge-preset',
+        desc: 'カラーパレットから選んだ色コード（HEX）を入力欄に一発で注入します。',
+        params: ['カラーコード: 例 `#2ec4a6`'],
+        tip: '入力欄の上にドラッグ＆ドロップするだけで自動入力されます。'
+      },
+      {
+        id: 'pre_img',
+        icon: '🖼️',
+        name: 'サンプル画像URL',
+        badge: 'プリセット',
+        badgeClass: 'badge-preset',
+        desc: 'ダミー画像サービスのURL（Lorem Picsumなど）をすぐに補完します。',
+        params: ['画像URL: 例 `https://picsum.photos/400/300`'],
+        tip: '画像ブロックの「画像URL欄」へドロップしてレイアウト確認に使います。'
+      }
+    ]
   };
 
-  // プレビュー表示切替
-  $$('#view-seg button').forEach(b => {     b.onclick = () => {       $$
-('#view-seg button').forEach(x => x.classList.remove('active'));
-      b.classList.add('active');
-      if(b.dataset.view === 'code'){
-        $('#preview-frame-wrap').classList.add('hidden');
-        $('#preview-code').classList.remove('hidden');
-        $('#preview-code').textContent = '<!-- ここに生成されたHTML/CSSが表示されます -->\n<div class="box">\n  <h1>サンプルページ</h1>\n</div>';
-      } else {
-        $('#preview-frame-wrap').classList.remove('hidden');
-        $('#preview-code').classList.add('hidden');
-      }
-    };
+  let currentCategory = 'text';
+  let currentBlockId = 'heading';
+
+  // DOM要素
+  const catTabs = document.getElementById('catTabs');
+  const blockList = document.getElementById('blockList');
+  const blockDetail = document.getElementById('blockDetail');
+
+  // カテゴリ切り替え
+  catTabs.addEventListener('click', (e) => {
+    const tab = e.target.closest('.cat-tab');
+    if (!tab) return;
+
+    document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+
+    currentCategory = tab.dataset.cat;
+    currentBlockId = blockData[currentCategory][0].id;
+    renderBlockList();
+    renderBlockDetail();
   });
-}
 
-function updateWorkspace(){
-  // 簡易初期化表示
-}
+  // ブロックリスト描画
+  function renderBlockList() {
+    const list = blockData[currentCategory];
+    blockList.innerHTML = list.map(item => `
+      <div class="block-item ${item.id === currentBlockId ? 'active' : ''}" data-id="${item.id}">
+        <span class="block-icon">${item.icon}</span>
+        <span>${item.name}</span>
+        <span class="badge ${item.badgeClass} block-tag">${item.badge}</span>
+      </div>
+    `).join('');
 
-})();
+    // アイテムクリックイベント
+    blockList.querySelectorAll('.block-item').forEach(item => {
+      item.addEventListener('click', () => {
+        currentBlockId = item.dataset.id;
+        document.querySelectorAll('.block-item').forEach(b => b.classList.remove('active'));
+        item.classList.add('active');
+        renderBlockDetail();
+      });
+    });
+  }
+
+  // ブロック詳細描画
+  function renderBlockDetail() {
+    const list = blockData[currentCategory];
+    const block = list.find(b => b.id === currentBlockId) || list[0];
+
+    blockDetail.innerHTML = `
+      <div class="detail-header">
+        <span style="font-size: 2rem;">${block.icon}</span>
+        <div>
+          <h4>${block.name}</h4>
+          <span class="badge ${block.badgeClass}">${block.badge}</span>
+        </div>
+      </div>
+      <p style="margin-top: 0; font-size: 0.95rem;">${block.desc}</p>
+
+      <div class="detail-section-title">⚙️ 主な設定パラメーター</div>
+      <ul class="param-list">
+        ${block.params.map(p => `<li>${p}</li>`).join('')}
+      </ul>
+
+      <div class="callout callout-tip" style="margin-top: auto; margin-bottom: 0;">
+        💡 <strong>使い方のコツ:</strong><br>${block.tip}
+      </div>
+    `;
+  }
+
+  // 初期化実行
+  renderBlockList();
+  renderBlockDetail();
 </script>
+
 </body>
 </html>
